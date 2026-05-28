@@ -1,0 +1,27 @@
+{
+  "name": "@owlstack/extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "OwlStack browser extension: copy and publish OwlStack-scheduled content to platforms with no write API (Substack).",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "lint": "tsc --noEmit",
+    "zip": "cd dist && zip -r ../owlstack-extension.zip ."
+  },
+  "dependencies": {
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
+  "devDependencies": {
+    "@owlstack/tsconfig": "workspace:*",
+    "@crxjs/vite-plugin": "^2.0.0-beta.26",
+    "@types/chrome": "^0.0.287",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "5.9.3",
+    "vite": "^6.0.7"
+  }
+}
