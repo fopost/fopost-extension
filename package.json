@@ -1,9 +1,9 @@
 {
   "name": "@owlstack/extension",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "OwlStack browser extension: copy and publish OwlStack-scheduled content to platforms with no write API (Substack).",
+  "description": "OwlStack browser extension: capture any page, image, or link into a scheduled social post, and publish content to platforms with no write API (Substack).",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

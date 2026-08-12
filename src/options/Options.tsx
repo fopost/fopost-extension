@@ -26,9 +26,10 @@ export default function Options() {
       </header>
 
       <p className="muted">
-        Create an API key in OwlStack (Settings &rarr; API keys) with the <code>extension</code>{' '}
-        scope, then paste it below. The extension only reads your queued content and marks it
-        published. It never sees your Substack account.
+        Create an API key in OwlStack (Settings &rarr; API keys) and paste it below. Give it{' '}
+        <code>posts</code>, <code>accounts</code>, and <code>extension</code> permissions, plus{' '}
+        <code>ai</code> if you want to write captions with AI. The key is stored on this device
+        only, and the extension talks to no server other than OwlStack.
       </p>
 
       <label className="field">
