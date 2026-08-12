@@ -1,175 +1,102 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ApiError, fetchQueue, markStatus } from '../lib/api.js';
-import type { ExtensionItem, ExtensionMedia } from '../lib/types.js';
+import ComposeView from './ComposeView.js';
+import QueueView from './QueueView.js';
+import {
+  captureTab,
+  clearPendingCapture,
+  readPendingCapture,
+  setPendingCapture,
+} from '../lib/capture.js';
+import type { PageCapture } from '../lib/types.js';
 
-// Where to open each manual platform's composer. We only navigate the user
-// there; we never automate the page.
-const PUBLISH_URLS: Record<string, string> = {
-  substack: 'https://substack.com/publish/post?type=newsletter',
-};
-
-function publishUrl(platform: string): string | null {
-  return PUBLISH_URLS[platform] ?? null;
-}
-
-type Flash = { id: number; text: string } | null;
+type Tab = 'compose' | 'queue';
+type Pending = { capture: PageCapture; tabId: number };
 
 export default function App() {
-  const [items, setItems] = useState<ExtensionItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [needsKey, setNeedsKey] = useState(false);
-  const [busyId, setBusyId] = useState<number | null>(null);
-  const [flash, setFlash] = useState<Flash>(null);
+  const [tab, setTab] = useState<Tab>('queue');
+  const [pending, setPending] = useState<Pending | null>(null);
+  const [ready, setReady] = useState(false);
+  const [captureError, setCaptureError] = useState<string | null>(null);
+  const [capturing, setCapturing] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    setNeedsKey(false);
-    try {
-      setItems(await fetchQueue());
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 0) setNeedsKey(true);
-      setError(err instanceof Error ? err.message : 'Failed to load queue.');
-    } finally {
-      setLoading(false);
-    }
+  // A context-menu capture waiting in session storage is why the popup opened,
+  // so it decides which tab lands first.
+  useEffect(() => {
+    void readPendingCapture().then((found) => {
+      if (found) {
+        setPending(found);
+        setTab('compose');
+      }
+      setReady(true);
+    });
   }, []);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const discard = useCallback(() => {
+    void clearPendingCapture();
+    setPending(null);
+    setTab('queue');
+  }, []);
 
-  const flashFor = (id: number, text: string) => {
-    setFlash({ id, text });
-    window.setTimeout(() => setFlash((f) => (f?.id === id ? null : f)), 1500);
-  };
-
-  const copyText = async (id: number, text: string, label: string) => {
+  // Clicking the toolbar icon grants activeTab for the current tab, so the
+  // popup can capture it directly without a context menu.
+  const captureCurrentTab = useCallback(async () => {
+    setCapturing(true);
+    setCaptureError(null);
     try {
-      await navigator.clipboard.writeText(text);
-      flashFor(id, `${label} copied`);
+      const [active] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!active?.id) throw new Error('No active tab.');
+      const capture = await captureTab(active.id, 'page', null, null);
+      await setPendingCapture(capture, active.id);
+      setPending({ capture, tabId: active.id });
     } catch {
-      flashFor(id, 'Copy failed');
-    }
-  };
-
-  const copyImage = async (id: number, media: ExtensionMedia) => {
-    try {
-      const res = await fetch(media.url);
-      const blob = await res.blob();
-      await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-      flashFor(id, 'Image copied');
-    } catch {
-      // Fall back to copying the image URL if binary clipboard write fails.
-      try {
-        await navigator.clipboard.writeText(media.url);
-        flashFor(id, 'Image URL copied');
-      } catch {
-        flashFor(id, 'Copy failed');
-      }
-    }
-  };
-
-  const openSite = (platform: string) => {
-    const url = publishUrl(platform);
-    if (url) void chrome.tabs.create({ url });
-  };
-
-  const updateStatus = async (item: ExtensionItem, status: 'published' | 'skipped') => {
-    setBusyId(item.id);
-    try {
-      await markStatus(item.id, status);
-      setItems((prev) => prev.filter((i) => i.id !== item.id));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Update failed.');
+      setCaptureError('This page cannot be read by extensions. Try a normal web page.');
     } finally {
-      setBusyId(null);
+      setCapturing(false);
     }
-  };
+  }, []);
 
   return (
     <div className="app">
       <header className="header">
-        <span className="brand">OwlStack Publisher</span>
-        <button className="icon-btn" title="Refresh" onClick={() => void load()}>
-          &#x21bb;
+        <span className="brand">OwlStack</span>
+        <button
+          className="icon-btn"
+          title="Settings"
+          onClick={() => chrome.runtime.openOptionsPage()}
+        >
+          &#x2699;
         </button>
       </header>
 
-      {loading && <p className="muted">Loading your queue...</p>}
+      <nav className="tabs">
+        <button
+          className={tab === 'compose' ? 'tab active' : 'tab'}
+          onClick={() => setTab('compose')}
+        >
+          Compose
+        </button>
+        <button className={tab === 'queue' ? 'tab active' : 'tab'} onClick={() => setTab('queue')}>
+          Queue
+        </button>
+      </nav>
 
-      {needsKey && (
+      {!ready && <p className="muted">Loading...</p>}
+
+      {ready && tab === 'compose' && pending && (
+        <ComposeView capture={pending.capture} tabId={pending.tabId} onDiscard={discard} />
+      )}
+
+      {ready && tab === 'compose' && !pending && (
         <div className="empty">
-          <p>Connect the extension to OwlStack to see your queued content.</p>
-          <button className="primary" onClick={() => chrome.runtime.openOptionsPage()}>
-            Open settings
+          <p>Right-click any page, image, link, or selection and choose Send to OwlStack.</p>
+          <button className="primary" disabled={capturing} onClick={() => void captureCurrentTab()}>
+            {capturing ? 'Reading page...' : 'Capture this page'}
           </button>
+          {captureError && <p className="error">{captureError}</p>}
         </div>
       )}
 
-      {!loading && !needsKey && error && <p className="error">{error}</p>}
-
-      {!loading && !needsKey && !error && items.length === 0 && (
-        <p className="muted">Nothing to publish right now. Scheduled content will appear here.</p>
-      )}
-
-      <ul className="list">
-        {items.map((item) => (
-          <li key={item.id} className={`card${item.due ? ' due' : ''}`}>
-            <div className="card-head">
-              <span className="platform">{item.platform_name}</span>
-              {item.due ? (
-                <span className="badge">Due now</span>
-              ) : item.scheduled_at ? (
-                <span className="muted small">
-                  {new Date(item.scheduled_at).toLocaleString()}
-                </span>
-              ) : null}
-            </div>
-
-            {item.content.title && <p className="title">{item.content.title}</p>}
-            <p className="body">{item.content.body || '(no body)'}</p>
-
-            <div className="actions">
-              {item.content.title && (
-                <button onClick={() => void copyText(item.id, item.content.title ?? '', 'Title')}>
-                  Copy title
-                </button>
-              )}
-              <button onClick={() => void copyText(item.id, item.content.body, 'Body')}>
-                Copy body
-              </button>
-              {item.content.media.map((m, idx) => (
-                <button key={idx} onClick={() => void copyImage(item.id, m)}>
-                  Copy image {item.content.media.length > 1 ? idx + 1 : ''}
-                </button>
-              ))}
-              {publishUrl(item.platform) && (
-                <button onClick={() => openSite(item.platform)}>Open {item.platform_name}</button>
-              )}
-            </div>
-
-            <div className="actions footer-actions">
-              <button
-                className="primary"
-                disabled={busyId === item.id}
-                onClick={() => void updateStatus(item, 'published')}
-              >
-                Mark published
-              </button>
-              <button
-                className="ghost"
-                disabled={busyId === item.id}
-                onClick={() => void updateStatus(item, 'skipped')}
-              >
-                Skip
-              </button>
-              {flash?.id === item.id && <span className="flash">{flash.text}</span>}
-            </div>
-          </li>
-        ))}
-      </ul>
+      {ready && tab === 'queue' && <QueueView />}
     </div>
   );
 }

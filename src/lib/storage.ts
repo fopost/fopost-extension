@@ -6,7 +6,8 @@ export async function getSettings(): Promise<Settings> {
   const stored = await chrome.storage.local.get(['apiKey', 'baseUrl']);
   return {
     apiKey: typeof stored.apiKey === 'string' ? stored.apiKey : '',
-    baseUrl: typeof stored.baseUrl === 'string' && stored.baseUrl ? stored.baseUrl : DEFAULT_BASE_URL,
+    baseUrl:
+      typeof stored.baseUrl === 'string' && stored.baseUrl ? stored.baseUrl : DEFAULT_BASE_URL,
   };
 }
 
