@@ -135,11 +135,17 @@ export default function ComposeView({ capture, tabId, onDiscard }: Props) {
     setBusy('ai');
     setError(null);
     try {
-      // The page text is the source material; the current draft steers tone.
-      const source = [capture.title, capture.selection || capture.description, capture.pageText]
+      // Labelled so the model treats the article as source material to write
+      // *about*, not as a draft caption to lightly edit.
+      const source = [
+        `Source page: ${capture.title}`,
+        capture.url && `URL: ${capture.url}`,
+        capture.selection && `Highlighted by the user:\n${capture.selection}`,
+        capture.pageText && `Page content:\n${capture.pageText}`,
+      ]
         .filter(Boolean)
         .join('\n\n')
-        .slice(0, 6000);
+        .slice(0, 4000);
       const tightest = selectedAccounts.reduce<number | undefined>((min, a) => {
         const limit = platformLimits.get(a.platform)?.maxTextLength;
         if (limit === undefined) return min;
