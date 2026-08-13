@@ -20,7 +20,7 @@ import { cn } from '../lib/utils.js';
 import type { Account, PageCapture, PlatformInfo, UploadedMedia } from '../lib/types.js';
 
 /** Starting points, so the field is not an empty box with no hint of its use. */
-const AI_PROMPT_EXAMPLES = ['Write it in Persian', 'Make it shorter', 'More formal', 'Add a hook'];
+const AI_PROMPT_EXAMPLES = ['Make it shorter', 'More formal', 'Add a hook'];
 
 /** Matches AI_FEATURES.ai_caption.defaultCredits on the API. */
 const CAPTION_CREDIT_COST = 1;
@@ -349,7 +349,7 @@ export default function ComposeView({ capture, tabId, onDiscard }: Props) {
                 aria-label="Instruction for the AI"
                 rows={2}
                 value={aiPrompt}
-                placeholder="Write it in Persian. Keep it playful."
+                placeholder="Tell the AI what you want."
                 onChange={(e) => setAiPrompt(e.target.value)}
               />
               <div className="flex flex-wrap gap-1.5">
