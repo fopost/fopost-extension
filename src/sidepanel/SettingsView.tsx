@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Check, KeyRound } from 'lucide-react';
 import { Button } from '../components/ui/button.js';
 import { Field, Input } from '../components/ui/field.js';
-import { DEFAULT_BASE_URL, getSettings, saveSettings } from '../lib/storage.js';
+import { getSettings, saveSettings } from '../lib/storage.js';
 
 const SCOPES = [
   { name: 'posts', why: 'Create and publish the captured post' },
@@ -19,18 +19,14 @@ const SCOPES = [
  */
 export default function SettingsView() {
   const [apiKey, setApiKey] = useState('');
-  const [baseUrl, setBaseUrl] = useState(DEFAULT_BASE_URL);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    void getSettings().then((s) => {
-      setApiKey(s.apiKey);
-      setBaseUrl(s.baseUrl);
-    });
+    void getSettings().then((s) => setApiKey(s.apiKey));
   }, []);
 
   const save = async () => {
-    await saveSettings({ apiKey, baseUrl });
+    await saveSettings({ apiKey });
     setSaved(true);
     window.setTimeout(() => setSaved(false), 2000);
   };
@@ -53,16 +49,6 @@ export default function SettingsView() {
           value={apiKey}
           placeholder="osk_…"
           onChange={(e) => setApiKey(e.target.value)}
-        />
-      </Field>
-
-      <Field label="API base URL" htmlFor="base-url">
-        <Input
-          id="base-url"
-          type="text"
-          value={baseUrl}
-          placeholder={DEFAULT_BASE_URL}
-          onChange={(e) => setBaseUrl(e.target.value)}
         />
       </Field>
 

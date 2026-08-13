@@ -1,3 +1,4 @@
+import { API_BASE_URL } from './config.js';
 import { getSettings } from './storage.js';
 import type {
   Account,
@@ -30,14 +31,14 @@ function parseError(status: number, text: string): ApiError {
 }
 
 async function authFetch(path: string, init: RequestInit = {}): Promise<Response> {
-  const { apiKey, baseUrl } = await getSettings();
+  const { apiKey } = await getSettings();
   if (!apiKey) {
     throw new ApiError(
       0,
       'No API key set. Open the extension options to add your OwlStack API key.',
     );
   }
-  return fetch(`${baseUrl}/api/v1${path}`, {
+  return fetch(`${API_BASE_URL}/api/v1${path}`, {
     ...init,
     headers: { 'X-API-Key': apiKey, ...(init.headers ?? {}) },
   });

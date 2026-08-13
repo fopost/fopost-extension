@@ -7,7 +7,7 @@ import { defineManifest } from '@crxjs/vite-plugin';
  * and only for that click. The only standing host permissions are the
  * OwlStack API itself (plus localhost for development).
  */
-export default defineManifest({
+export default defineManifest((env) => ({
   manifest_version: 3,
   name: 'OwlStack Publisher',
   version: '0.2.0',
@@ -57,6 +57,10 @@ export default defineManifest({
       matches: ['<all_urls>'],
     },
   ],
-  // Only the OwlStack API. localhost is for development against a local API.
-  host_permissions: ['https://api.owlstack.app/*', 'http://localhost:8080/*'],
-});
+  // Only the OwlStack API. A dev build also reaches a local one; the shipped
+  // build must not ask for a permission it never uses.
+  host_permissions:
+    env.mode === 'production'
+      ? ['https://api.owlstack.app/*']
+      : ['https://api.owlstack.app/*', 'http://localhost:8080/*'],
+}));

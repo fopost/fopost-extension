@@ -56,7 +56,9 @@ Two consequences of living in the page, both by design:
 
 ## Setup
 
-Create an API key in OwlStack (**Settings → API keys**) and paste it into the extension options.
+Create an API key in OwlStack (**Settings → API keys**) and paste it into the extension's Settings
+screen. That key is the only thing to configure: the API address is fixed at build time, so there
+is no server field for a user to get wrong or point somewhere else.
 
 | Permission on the key | Needed for                                                                    |
 | :-------------------- | :---------------------------------------------------------------------------- |
@@ -81,7 +83,7 @@ single-purpose and permission-justification fields.
 | `alarms`                                       | Runs the 5-minute poll for content that is due for manual publishing.                                                                                                                                      |
 | `notifications`                                | Tells you when scheduled content is ready to publish by hand.                                                                                                                                              |
 | `clipboardWrite`                               | Copies the queued title / body / image so you can paste it into the target platform.                                                                                                                       |
-| `host_permissions: https://api.owlstack.app/*` | The OwlStack API — the only server this extension contacts. `http://localhost:8080/*` is present for local development.                                                                                    |
+| `host_permissions: https://api.owlstack.app/*` | The OwlStack API — the only server this extension contacts, and the only host a shipped build asks for.                                                                                                    |
 
 Deliberately **not** requested:
 
@@ -110,7 +112,9 @@ npm run zip       # zip dist/ for the Chrome Web Store
 
 Load `dist/` via `chrome://extensions` → Developer mode → Load unpacked.
 
-Point the options page at `http://localhost:8080` to develop against a local API.
+A `npm run dev` build talks to `http://localhost:8080`; a production build talks to
+`https://api.owlstack.app`, and only that build carries the matching host permission. Set
+`VITE_API_BASE_URL` to point a build anywhere else, which is how a staging build is made.
 
 ## Release
 

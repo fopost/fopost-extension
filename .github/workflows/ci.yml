@@ -45,12 +45,13 @@ jobs:
               || { echo "::error::$page still references TypeScript source"; exit 1; }
           done
 
+      # A production build reaches exactly one host. localhost belongs to dev
+      # builds only, and shipping it asks the store for a permission we never
+      # use.
       - name: Verify only the OwlStack API is reachable
         run: |
           HOSTS=$(node -p "JSON.parse(require('fs').readFileSync('dist/manifest.json','utf8')).host_permissions.join(' ')")
-          for host in $HOSTS; do
-            case "$host" in
-              https://api.owlstack.app/*|http://localhost:8080/*) ;;
-              *) echo "::error::unexpected host permission: $host"; exit 1 ;;
-            esac
-          done
+          [ "$HOSTS" = "https://api.owlstack.app/*" ] \
+            || { echo "::error::unexpected host permissions: $HOSTS"; exit 1; }
+          ! grep -rq "localhost:8080" dist/assets/*.js \
+            || { echo "::error::a dev API URL is baked into the shipped bundle"; exit 1; }

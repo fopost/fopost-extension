@@ -27,7 +27,6 @@ export interface ExtensionItem {
 
 export interface Settings {
   apiKey: string;
-  baseUrl: string;
 }
 
 // ─── Composer ─────────────────────────────────────────────────────
