@@ -1,6 +1,7 @@
 import { fetchDue } from './lib/api.js';
 import { getSettings } from './lib/storage.js';
 import { captureTab, setPendingCapture } from './lib/capture.js';
+import { openOverlay } from './lib/overlay.js';
 import type { PageCapture } from './lib/types.js';
 
 // Two jobs live here:
@@ -40,8 +41,19 @@ function registerMenus(): void {
   });
 }
 
-// Clicking the toolbar icon opens the side panel instead of a popup.
-void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => undefined);
+// Clicking the toolbar icon toggles the in-page overlay. The click is what
+// grants activeTab, which is all the injection needs.
+chrome.action.onClicked.addListener((tab) => {
+  if (!tab.id) return;
+  void openOverlay(tab.id, true).then((ok) => {
+    if (!ok) {
+      notify(
+        'OwlStack cannot open here',
+        'Some pages (browser settings, the Web Store) block extensions entirely.',
+      );
+    }
+  });
+});
 
 chrome.runtime.onInstalled.addListener(() => {
   registerMenus();
@@ -69,13 +81,9 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   const source = MENU_SOURCES[String(info.menuItemId)];
   if (!source || !tab?.id) return;
 
-  // Open the panel first, in the same turn as the click. Chrome only honours
-  // sidePanel.open while the user gesture is still live, and reading the page
-  // takes long enough to lose it.
-  const opened = chrome.sidePanel
-    .open({ tabId: tab.id })
-    .then(() => true)
-    .catch(() => false);
+  // Mount the panel first so it is already up while the page is being read.
+  // `false` leaves an open panel alone rather than toggling it shut.
+  const opened = openOverlay(tab.id, false);
 
   void handleCapture(source, info, tab.id, opened);
 });

@@ -34,13 +34,25 @@ into a social platform on your behalf.
 
 ## The panel
 
-The extension renders in the browser's **side panel**, not a popup. Clicking the toolbar icon
-opens it; a "Send to OwlStack" context-menu click opens it too and lands on the composer. The
-panel is full window height and the user can drag its edge to resize, which is why the composer
-fits without the page-length scroll a 380px popup forced.
+The UI renders as a **fixed overlay inside the page**, anchored to the right edge, not in Chrome's
+side panel. That is deliberate: the side panel is browser chrome, so it reserves space and reflows
+the tab, shrinking the site the user is reading. An overlay floats above the page instead, so the
+page keeps its full width. Drag its left edge to resize.
+
+Clicking the toolbar icon toggles it. A "Send to OwlStack" context-menu click opens it and lands
+on the composer. Injection happens on demand through `activeTab`, granted by that click, so the
+extension still holds no standing permission on any site.
 
 Three screens sit on one bottom bar (Compose, Queue, Settings) rather than two tabs plus a gear in
 the corner. Only the region between the header and that bar scrolls.
+
+Two consequences of living in the page, both by design:
+
+- **It closes when you navigate.** A content script does not survive a page load. Finish a draft
+  before clicking a link.
+- **A few sites will refuse it.** A page whose Content Security Policy forbids framing a
+  `chrome-extension://` URL cannot host the panel, and pages that block extensions outright
+  (browser settings, the Web Store) never could. Both cases show a notification instead.
 
 ## Setup
 
@@ -60,23 +72,25 @@ The `ai` permission is deliberately separate from `posts`, because it spends AI 
 What the manifest asks for and why. This is the text to paste into the Chrome Web Store's
 single-purpose and permission-justification fields.
 
-| Permission                                     | Why                                                                                                                                                                          |
-| :--------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `activeTab`                                    | Reads the page you explicitly acted on — a right-click on our menu item, or a click on our toolbar icon. Access is granted by that gesture, for that tab, and expires.       |
-| `scripting`                                    | Injects the one-off extractor that reads the title, canonical URL, `og:` tags, visible text, and the image you selected. Nothing is injected until you invoke the extension. |
-| `contextMenus`                                 | Provides the "Send to OwlStack" entries on page, selection, image, and link contexts.                                                                                        |
-| `storage`                                      | Stores your API key and API base URL on this device, plus the in-flight capture in session storage.                                                                          |
-| `alarms`                                       | Runs the 5-minute poll for content that is due for manual publishing.                                                                                                        |
-| `notifications`                                | Tells you when scheduled content is ready to publish by hand.                                                                                                                |
-| `sidePanel`                                    | Renders the composer in the browser's side panel, so a long caption and the account list fit without scrolling.                                                              |
-| `clipboardWrite`                               | Copies the queued title / body / image so you can paste it into the target platform.                                                                                         |
-| `host_permissions: https://api.owlstack.app/*` | The OwlStack API — the only server this extension contacts. `http://localhost:8080/*` is present for local development.                                                      |
+| Permission                                     | Why                                                                                                                                                                                                        |
+| :--------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `activeTab`                                    | Reads the page you explicitly acted on — a right-click on our menu item, or a click on our toolbar icon. Access is granted by that gesture, for that tab, and expires.                                     |
+| `scripting`                                    | Injects the one-off extractor that reads the title, canonical URL, `og:` tags, visible text, and the image you selected, and mounts the panel overlay. Nothing is injected until you invoke the extension. |
+| `contextMenus`                                 | Provides the "Send to OwlStack" entries on page, selection, image, and link contexts.                                                                                                                      |
+| `storage`                                      | Stores your API key and API base URL on this device, plus the in-flight capture in session storage.                                                                                                        |
+| `alarms`                                       | Runs the 5-minute poll for content that is due for manual publishing.                                                                                                                                      |
+| `notifications`                                | Tells you when scheduled content is ready to publish by hand.                                                                                                                                              |
+| `clipboardWrite`                               | Copies the queued title / body / image so you can paste it into the target platform.                                                                                                                       |
+| `host_permissions: https://api.owlstack.app/*` | The OwlStack API — the only server this extension contacts. `http://localhost:8080/*` is present for local development.                                                                                    |
 
 Deliberately **not** requested:
 
 - **No host permission for any site you browse.** Page capture runs through `activeTab`, so the
   extension has no standing access to any website.
-- **No broad `<all_urls>`, no `tabs` permission, no background scraping, no analytics or
+- **`web_accessible_resources` lists `<all_urls>`, which is not a permission.** It only lets a
+  page frame the panel's own HTML. It grants no read or write access to any site, and the
+  extension still cannot touch a tab until you invoke it.
+- **No broad `<all_urls>` host permission, no `tabs` permission, no background scraping, no analytics or
   telemetry of any kind.** Nothing is read unless you invoke a capture, and nothing leaves your
   browser except the post you choose to create.
 - Captured image bytes are fetched **inside the page that already displayed them**, which is why

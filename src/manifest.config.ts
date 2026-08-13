@@ -20,8 +20,8 @@ export default defineManifest({
     '128': 'icon-128.png',
   },
   action: {
-    // No default_popup: clicking the toolbar icon opens the side panel, wired
-    // in background.ts via sidePanel.setPanelBehavior.
+    // No default_popup: clicking the toolbar icon injects the overlay panel
+    // into the current tab, wired in background.ts.
     default_title: 'OwlStack Publisher',
     default_icon: {
       '16': 'icon-16.png',
@@ -29,9 +29,6 @@ export default defineManifest({
       '48': 'icon-48.png',
       '128': 'icon-128.png',
     },
-  },
-  side_panel: {
-    default_path: 'src/sidepanel/index.html',
   },
   options_page: 'src/options/index.html',
   background: {
@@ -44,14 +41,21 @@ export default defineManifest({
     'notifications',
     'clipboardWrite',
     'contextMenus',
-    // The composer lives in a resizable full-height side panel rather than a
-    // popup, so a long caption and the account list fit without scrolling.
-    'sidePanel',
     // activeTab + scripting are what make "Send to OwlStack" work without a
     // broad host permission: the extractor is injected only into the tab the
     // user right-clicked, only at that moment.
     'activeTab',
     'scripting',
+  ],
+  // The panel renders as an iframe inside the page, so the page has to be
+  // allowed to frame it. This exposes nothing: the panel still reads and
+  // writes only through the extension's own APIs, and listing a resource here
+  // grants no access to any site.
+  web_accessible_resources: [
+    {
+      resources: ['src/sidepanel/index.html', 'assets/*', 'images/platforms/*', 'icon-*.png'],
+      matches: ['<all_urls>'],
+    },
   ],
   // Only the OwlStack API. localhost is for development against a local API.
   host_permissions: ['https://api.owlstack.app/*', 'http://localhost:8080/*'],

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ScanText } from 'lucide-react';
+import { ScanText, X } from 'lucide-react';
 import ComposeView from './ComposeView.js';
 import QueueView from './QueueView.js';
 import SettingsView from './SettingsView.js';
@@ -14,6 +14,9 @@ import {
 import type { PageCapture } from '../lib/types.js';
 
 type Pending = { capture: PageCapture; tabId: number };
+
+/** True in the in-page overlay, false on the standalone options page. */
+const framed = window.parent !== window;
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('queue');
@@ -35,9 +38,8 @@ export default function App() {
     });
   }, []);
 
-  // Unlike the popup this replaced, the panel stays open while the user
-  // browses, so a later context-menu capture has to land in a panel that
-  // already mounted.
+  // A capture can arrive while the overlay is already open, so it has to land
+  // in a panel that mounted before the click.
   useEffect(() => {
     const onChanged = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
       if (area !== 'session' || !changes.pendingCapture?.newValue) return;
@@ -77,8 +79,24 @@ export default function App() {
 
   return (
     <div className="flex h-full flex-col bg-white">
-      {/* No brand header here: Chrome already draws one above the panel with
-          the extension's name, so a second one just eats vertical space. */}
+      {/* Framed in a page, so nothing above us draws a title bar or a way out.
+          The standalone options page renders unframed and skips both. */}
+      {framed && (
+        <header className="flex shrink-0 items-center gap-2 border-b border-slate-200 px-4 py-2.5">
+          <img src={chrome.runtime.getURL('icon-32.png')} alt="" className="size-4" />
+          <span className="text-xs font-semibold tracking-tight">OwlStack Publisher</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            title="Close"
+            className="ml-auto -mr-1 size-7"
+            onClick={() => window.parent.postMessage({ type: 'owlstack-close' }, '*')}
+          >
+            <X />
+          </Button>
+        </header>
+      )}
+
       {/* The only scrolling region. The bottom nav stays put. */}
       <main className="scroll-slim min-h-0 flex-1 overflow-y-auto">
         {!ready && <p className="px-4 py-6 text-sm text-slate-500">Loading…</p>}
