@@ -1,0 +1,66 @@
+@import 'tailwindcss';
+
+/*
+ * Indigo accent, matching the OwlStack apps. The panel is a fixed-height
+ * viewport: html/body never scroll, only the screen body between the header
+ * and the bottom nav does.
+ */
+@theme {
+  --color-accent: #4f46e5;
+  --color-accent-hover: #4338ca;
+  --color-accent-soft: #eef2ff;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    font-family:
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      'Segoe UI',
+      Roboto,
+      Helvetica,
+      Arial,
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    color: var(--color-slate-900);
+    background: #fff;
+  }
+
+  /* Native controls inherit the panel's type instead of the browser default. */
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+}
+
+@layer utilities {
+  /* Thin scrollbar for the one region that scrolls. */
+  .scroll-slim {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-slate-300) transparent;
+  }
+  .scroll-slim::-webkit-scrollbar {
+    width: 6px;
+  }
+  .scroll-slim::-webkit-scrollbar-thumb {
+    background: var(--color-slate-300);
+    border-radius: 3px;
+  }
+}

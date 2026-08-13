@@ -10,7 +10,7 @@ Two jobs in one MV3 extension:
 
 ## How capture works
 
-1. Right-click → **Send to OwlStack** (or open the popup and press **Capture this page**).
+1. Right-click → **Send to OwlStack** (or open the panel and press **Capture this page**).
 2. The extension injects a small extractor into that one tab and reads the title, canonical URL,
    `og:` metadata, the visible article text, and the image you clicked (falling back to
    `og:image`).
@@ -27,9 +27,20 @@ into a social platform on your behalf.
 1. OwlStack schedules a post targeting a manual platform. The API stages it as `awaiting_manual`.
 2. The extension polls `GET /api/v1/extension/due` every 5 minutes (and on open). When something
    is due it shows a badge count and a notification.
-3. Open the popup's **Queue** tab, copy the title / body / image, paste into the platform, publish.
+3. Open the panel's **Queue** screen, copy the title / body / image, paste into the platform,
+   publish.
 4. Press **Mark published** (or **Skip**); the extension calls
    `POST /api/v1/extension/items/:id/status`.
+
+## The panel
+
+The extension renders in the browser's **side panel**, not a popup. Clicking the toolbar icon
+opens it; a "Send to OwlStack" context-menu click opens it too and lands on the composer. The
+panel is full window height and the user can drag its edge to resize, which is why the composer
+fits without the page-length scroll a 380px popup forced.
+
+Three screens sit on one bottom bar (Compose, Queue, Settings) rather than two tabs plus a gear in
+the corner. Only the region between the header and that bar scrolls.
 
 ## Setup
 
@@ -57,6 +68,7 @@ single-purpose and permission-justification fields.
 | `storage`                                      | Stores your API key and API base URL on this device, plus the in-flight capture in session storage.                                                                          |
 | `alarms`                                       | Runs the 5-minute poll for content that is due for manual publishing.                                                                                                        |
 | `notifications`                                | Tells you when scheduled content is ready to publish by hand.                                                                                                                |
+| `sidePanel`                                    | Renders the composer in the browser's side panel, so a long caption and the account list fit without scrolling.                                                              |
 | `clipboardWrite`                               | Copies the queued title / body / image so you can paste it into the target platform.                                                                                         |
 | `host_permissions: https://api.owlstack.app/*` | The OwlStack API — the only server this extension contacts. `http://localhost:8080/*` is present for local development.                                                      |
 

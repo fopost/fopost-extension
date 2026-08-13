@@ -9,7 +9,12 @@ import {
   publishPost,
   uploadMedia,
 } from '../lib/api.js';
+import { CalendarClock, Check, Sparkles, X } from 'lucide-react';
 import { dataUrlToBlob, fetchImageFromTab, seedCaption } from '../lib/capture.js';
+import PlatformIcon from '../components/PlatformIcon.js';
+import { Button } from '../components/ui/button.js';
+import { Field, Input, Textarea } from '../components/ui/field.js';
+import { cn } from '../lib/utils.js';
 import type { Account, PageCapture, PlatformInfo, UploadedMedia } from '../lib/types.js';
 
 /** Matches AI_FEATURES.ai_caption.defaultCredits on the API. */
@@ -208,151 +213,204 @@ export default function ComposeView({ capture, tabId, onDiscard }: Props) {
     [activeWorkspace, selected, image, caption, scheduleAt, capture.title],
   );
 
+  // The tightest limit across the selected accounts is the one that matters;
+  // per-platform detail only appears when something is actually over.
+  const tightestLimit = selectedAccounts.reduce<number | null>((min, a) => {
+    const limit = platformLimits.get(a.platform)?.maxTextLength;
+    if (limit === undefined) return min;
+    return min === null ? limit : Math.min(min, limit);
+  }, null);
+
   if (done) {
     return (
-      <div className="empty">
-        <p className="success">{done}</p>
-        <button className="primary" onClick={onDiscard}>
+      <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
+        <div className="flex size-11 items-center justify-center rounded-full bg-emerald-50">
+          <Check className="size-5 text-emerald-600" />
+        </div>
+        <p className="text-sm font-medium">{done}</p>
+        <Button variant="secondary" onClick={onDiscard}>
           Capture something else
-        </button>
+        </Button>
       </div>
     );
   }
 
-  if (loading) return <p className="muted">Loading your accounts...</p>;
+  if (loading) {
+    return <p className="px-4 py-6 text-sm text-slate-500">Loading your accounts…</p>;
+  }
 
-  if (!loading && accounts.length === 0) {
+  if (accounts.length === 0) {
     return (
-      <div className="empty">
-        <p>No connected accounts found for this API key.</p>
-        <p className="muted small">
-          The key needs the <code>accounts</code> and <code>posts</code> permissions.
+      <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
+        <p className="text-sm font-medium">No connected accounts</p>
+        <p className="text-xs leading-relaxed text-slate-500">
+          This API key returned no accounts. It needs the <code>accounts</code> and{' '}
+          <code>posts</code> permissions.
         </p>
-        <button onClick={onDiscard}>Back</button>
+        <Button variant="secondary" onClick={onDiscard}>
+          Back
+        </Button>
       </div>
     );
   }
+
+  const canSubmit =
+    busy === null && selected.length > 0 && caption.trim().length > 0 && overLimit.length === 0;
 
   return (
-    <div className="compose">
-      <div className="capture-head">
-        <span className="muted small">{capture.siteName}</span>
-        <button className="link-btn" onClick={onDiscard} title="Discard this capture">
-          Discard
-        </button>
-      </div>
+    <div className="flex min-h-full flex-col">
+      <div className="flex-1 space-y-4 px-4 py-4">
+        {/* Source */}
+        <div className="flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2.5">
+          {image ? (
+            <img src={image.dataUrl} alt="" className="size-12 shrink-0 rounded-md object-cover" />
+          ) : (
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-md bg-slate-200 text-[10px] font-medium text-slate-500">
+              No image
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-medium text-slate-800">{capture.title}</p>
+            <p className="truncate text-[11px] text-slate-500">{capture.siteName}</p>
+            {!image && imageNote && (
+              <p className="mt-0.5 text-[11px] text-slate-400">{imageNote}</p>
+            )}
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            title="Discard this capture"
+            onClick={onDiscard}
+            className="-mt-0.5 -mr-0.5"
+          >
+            <X />
+          </Button>
+        </div>
 
-      {image && (
-        <img
-          className="media-preview"
-          src={image.dataUrl}
-          alt={capture.title || 'Captured image'}
-        />
-      )}
-      {!image && imageNote && <p className="muted small">{imageNote}</p>}
-
-      <label className="field">
-        <span>Caption</span>
-        <textarea rows={6} value={caption} onChange={(e) => setCaption(e.target.value)} />
-      </label>
-
-      <div className="counts">
-        {selectedAccounts.map((a) => {
-          const limit = platformLimits.get(a.platform);
-          if (!limit) return null;
-          const over = caption.length > limit.maxTextLength;
-          return (
-            <span key={a.id} className={over ? 'count over' : 'count'}>
-              {limit.displayName} {caption.length}/{limit.maxTextLength}
-            </span>
-          );
-        })}
-      </div>
-
-      <div className="ai-row">
-        <button
-          disabled={busy !== null || selected.length === 0}
-          onClick={() => void runAiCaption()}
-        >
-          {busy === 'ai' ? 'Writing...' : 'Write with AI'}
-        </button>
-        <span className="muted small">
-          {CAPTION_CREDIT_COST} credit
-          {credits !== null ? ` · ${credits} left` : ''}
-        </span>
-      </div>
-
-      <div className="field">
-        <span>Post to</span>
-        <ul className="accounts">
-          {accounts.map((account) => {
-            const otherWorkspace =
-              activeWorkspace !== null && account.workspaceId !== activeWorkspace;
-            return (
-              <li key={account.id}>
-                <label className={otherWorkspace ? 'account disabled' : 'account'}>
-                  <input
-                    type="checkbox"
-                    checked={selected.includes(account.id)}
-                    disabled={otherWorkspace}
-                    onChange={() => toggleAccount(account)}
-                  />
-                  <span className="platform">
-                    {platformLimits.get(account.platform)?.displayName ?? account.platform}
-                  </span>
-                  <span className="muted small">{account.username ?? account.name}</span>
-                </label>
-              </li>
-            );
-          })}
-        </ul>
-        {accounts.some((a) => activeWorkspace && a.workspaceId !== activeWorkspace) && (
-          <span className="muted small">
-            One post targets one workspace. Clear your selection to pick accounts from another.
-          </span>
-        )}
-      </div>
-
-      {showSchedule && (
-        <label className="field">
-          <span>Publish at</span>
-          <input
-            type="datetime-local"
-            value={scheduleAt}
-            onChange={(e) => setScheduleAt(e.target.value)}
-          />
-        </label>
-      )}
-
-      {overLimit.length > 0 && (
-        <p className="error">
-          Too long for{' '}
-          {overLimit.map((a) => platformLimits.get(a.platform)?.displayName).join(', ')}.
-        </p>
-      )}
-      {error && <p className="error">{error}</p>}
-
-      <div className="actions footer-actions">
-        <button
-          className="primary"
-          disabled={
-            busy !== null || selected.length === 0 || !caption.trim() || overLimit.length > 0
+        {/* Caption */}
+        <Field
+          label="Caption"
+          htmlFor="caption"
+          hint={
+            tightestLimit !== null && (
+              <span
+                className={cn(
+                  'font-mono text-[11px] tabular-nums',
+                  overLimit.length > 0 ? 'font-semibold text-red-600' : 'text-slate-400',
+                )}
+              >
+                {caption.length}/{tightestLimit}
+              </span>
+            )
           }
-          onClick={() => void submit('now')}
         >
-          {busy === 'now' ? 'Posting...' : 'Post now'}
-        </button>
+          <Textarea
+            id="caption"
+            rows={7}
+            value={caption}
+            onChange={(e) => setCaption(e.target.value)}
+          />
+        </Field>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={busy !== null || selected.length === 0}
+            onClick={() => void runAiCaption()}
+          >
+            <Sparkles className="text-accent" />
+            {busy === 'ai' ? 'Writing…' : 'Write with AI'}
+          </Button>
+          <span className="text-[11px] text-slate-400">
+            {CAPTION_CREDIT_COST} credit{credits !== null ? ` · ${credits} left` : ''}
+          </span>
+        </div>
+
+        {/* Destinations */}
+        <div className="space-y-1.5">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-xs font-medium text-slate-700">Post to</span>
+            {selected.length > 0 && (
+              <span className="text-[11px] text-slate-400">{selected.length} selected</span>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {accounts.map((account) => {
+              const otherWorkspace =
+                activeWorkspace !== null && account.workspaceId !== activeWorkspace;
+              const active = selected.includes(account.id);
+              return (
+                <button
+                  key={account.id}
+                  type="button"
+                  disabled={otherWorkspace}
+                  aria-pressed={active}
+                  title={platformLimits.get(account.platform)?.displayName ?? account.platform}
+                  onClick={() => toggleAccount(account)}
+                  className={cn(
+                    'flex items-center gap-1.5 rounded-full border py-1 pr-2.5 pl-1.5 text-xs transition-colors',
+                    'outline-none focus-visible:ring-2 focus-visible:ring-accent/40',
+                    active
+                      ? 'border-accent bg-accent-soft font-medium text-accent'
+                      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
+                    otherWorkspace && 'cursor-not-allowed opacity-40',
+                  )}
+                >
+                  <PlatformIcon platform={account.platform} className="size-4" />
+                  <span className="max-w-28 truncate">{account.username ?? account.name}</span>
+                  {active && <Check className="size-3" />}
+                </button>
+              );
+            })}
+          </div>
+          {accounts.some((a) => activeWorkspace && a.workspaceId !== activeWorkspace) && (
+            <p className="text-[11px] text-slate-400">
+              One post targets one workspace. Clear your selection to pick accounts from another.
+            </p>
+          )}
+        </div>
+
+        {/* Schedule */}
         {showSchedule ? (
-          <button
-            disabled={
-              busy !== null || selected.length === 0 || !caption.trim() || overLimit.length > 0
-            }
+          <Field label="Publish at" htmlFor="schedule-at">
+            <Input
+              id="schedule-at"
+              type="datetime-local"
+              value={scheduleAt}
+              onChange={(e) => setScheduleAt(e.target.value)}
+            />
+          </Field>
+        ) : (
+          <Button variant="link" size="sm" className="px-0" onClick={() => setShowSchedule(true)}>
+            <CalendarClock />
+            Schedule for later
+          </Button>
+        )}
+
+        {overLimit.length > 0 && (
+          <p className="text-xs text-red-600">
+            Too long for{' '}
+            {overLimit.map((a) => platformLimits.get(a.platform)?.displayName).join(', ')}.
+          </p>
+        )}
+        {error && <p className="text-xs text-red-600">{error}</p>}
+      </div>
+
+      {/* Pinned above the nav, so the primary action never scrolls away. */}
+      <div className="sticky bottom-0 flex gap-2 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur">
+        <Button className="flex-1" disabled={!canSubmit} onClick={() => void submit('now')}>
+          {busy === 'now' ? 'Posting…' : 'Post now'}
+        </Button>
+        {showSchedule && (
+          <Button
+            variant="secondary"
+            className="flex-1"
+            disabled={!canSubmit}
             onClick={() => void submit('schedule')}
           >
-            {busy === 'schedule' ? 'Scheduling...' : 'Confirm schedule'}
-          </button>
-        ) : (
-          <button onClick={() => setShowSchedule(true)}>Schedule</button>
+            {busy === 'schedule' ? 'Scheduling…' : 'Confirm schedule'}
+          </Button>
         )}
       </div>
     </div>
