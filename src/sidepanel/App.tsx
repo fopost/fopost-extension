@@ -77,12 +77,9 @@ export default function App() {
 
   return (
     <div className="flex h-full flex-col bg-white">
-      <header className="flex shrink-0 items-center gap-2 border-b border-slate-200 px-4 py-3">
-        <img src={chrome.runtime.getURL('icon-32.png')} alt="" className="size-5" />
-        <span className="text-sm font-semibold tracking-tight">OwlStack</span>
-      </header>
-
-      {/* The only scrolling region. Header and nav stay put. */}
+      {/* No brand header here: Chrome already draws one above the panel with
+          the extension's name, so a second one just eats vertical space. */}
+      {/* The only scrolling region. The bottom nav stays put. */}
       <main className="scroll-slim min-h-0 flex-1 overflow-y-auto">
         {!ready && <p className="px-4 py-6 text-sm text-slate-500">Loading…</p>}
 
