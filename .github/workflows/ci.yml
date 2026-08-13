@@ -33,6 +33,18 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           [ "$MANIFEST" = "$VERSION" ] || { echo "::error::manifest is $MANIFEST but package.json is $VERSION"; exit 1; }
 
+      # The panel is loaded by URL rather than declared in the manifest, so a
+      # build-config slip copies its HTML through untransformed, still pointing
+      # at main.tsx. It then renders as a blank white frame with no build error.
+      - name: Verify every built page loads a compiled bundle
+        run: |
+          for page in dist/src/*/index.html; do
+            grep -q 'src="/assets/.*\.js"' "$page" \
+              || { echo "::error::$page has no compiled script tag"; exit 1; }
+            ! grep -qE '\.tsx?"' "$page" \
+              || { echo "::error::$page still references TypeScript source"; exit 1; }
+          done
+
       - name: Verify only the OwlStack API is reachable
         run: |
           HOSTS=$(node -p "JSON.parse(require('fs').readFileSync('dist/manifest.json','utf8')).host_permissions.join(' ')")
