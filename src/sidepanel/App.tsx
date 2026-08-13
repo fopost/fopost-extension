@@ -3,6 +3,7 @@ import { ScanText, X } from 'lucide-react';
 import ComposeView from './ComposeView.js';
 import QueueView from './QueueView.js';
 import SettingsView from './SettingsView.js';
+import WelcomeView from './WelcomeView.js';
 import BottomNav, { type Screen } from '../components/BottomNav.js';
 import { Button } from '../components/ui/button.js';
 import {
@@ -11,6 +12,7 @@ import {
   readPendingCapture,
   setPendingCapture,
 } from '../lib/capture.js';
+import { getSettings } from '../lib/storage.js';
 import type { PageCapture } from '../lib/types.js';
 
 type Pending = { capture: PageCapture; tabId: number };
@@ -25,6 +27,8 @@ export default function App() {
   const [captureError, setCaptureError] = useState<string | null>(null);
   const [capturing, setCapturing] = useState(false);
   const [queueCount, setQueueCount] = useState(0);
+  // null while unknown, so a new install never flashes the connected UI first.
+  const [hasKey, setHasKey] = useState<boolean | null>(null);
 
   // A context-menu capture waiting in session storage is why the panel opened,
   // so it decides which screen lands first.
@@ -48,6 +52,18 @@ export default function App() {
         setPending(found);
         setScreen('compose');
       });
+    };
+    chrome.storage.onChanged.addListener(onChanged);
+    return () => chrome.storage.onChanged.removeListener(onChanged);
+  }, []);
+
+  // Without a key nothing in the panel can load, so the guide takes over until
+  // one is saved. Saving from the Settings screen flips this without a reload.
+  useEffect(() => {
+    const read = () => void getSettings().then((s) => setHasKey(Boolean(s.apiKey)));
+    read();
+    const onChanged = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
+      if (area === 'local' && changes.apiKey) read();
     };
     chrome.storage.onChanged.addListener(onChanged);
     return () => chrome.storage.onChanged.removeListener(onChanged);
@@ -99,13 +115,19 @@ export default function App() {
 
       {/* The only scrolling region. The bottom nav stays put. */}
       <main className="scroll-slim min-h-0 flex-1 overflow-y-auto">
-        {!ready && <p className="px-4 py-6 text-sm text-slate-500">Loading…</p>}
+        {(!ready || hasKey === null) && (
+          <p className="px-4 py-6 text-sm text-slate-500">Loading…</p>
+        )}
 
-        {ready && screen === 'compose' && pending && (
+        {ready && hasKey === false && screen !== 'settings' && (
+          <WelcomeView onOpenSettings={() => setScreen('settings')} />
+        )}
+
+        {ready && hasKey && screen === 'compose' && pending && (
           <ComposeView capture={pending.capture} tabId={pending.tabId} onDiscard={discard} />
         )}
 
-        {ready && screen === 'compose' && !pending && (
+        {ready && hasKey && screen === 'compose' && !pending && (
           <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
             <div className="flex size-11 items-center justify-center rounded-full bg-accent-soft">
               <ScanText className="size-5 text-accent" />
@@ -122,8 +144,8 @@ export default function App() {
           </div>
         )}
 
-        {ready && screen === 'queue' && <QueueView onCountChange={setQueueCount} />}
-        {ready && screen === 'settings' && <SettingsView />}
+        {ready && hasKey && screen === 'queue' && <QueueView onCountChange={setQueueCount} />}
+        {ready && hasKey !== null && screen === 'settings' && <SettingsView />}
       </main>
 
       <BottomNav screen={screen} onChange={setScreen} queueCount={queueCount} />

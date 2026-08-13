@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Check, KeyRound } from 'lucide-react';
+import { Check, ExternalLink, KeyRound } from 'lucide-react';
 import { Button } from '../components/ui/button.js';
 import { Field, Input } from '../components/ui/field.js';
 import { getSettings, saveSettings } from '../lib/storage.js';
+import { API_KEYS_URL } from '../lib/urls.js';
 
 const SCOPES = [
   { name: 'posts', why: 'Create and publish the captured post' },
@@ -52,10 +53,16 @@ export default function SettingsView() {
         />
       </Field>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <Button onClick={() => void save()}>Save</Button>
+        <Button variant="secondary" asChild>
+          <a href={API_KEYS_URL} target="_blank" rel="noreferrer noopener">
+            Get a key
+            <ExternalLink />
+          </a>
+        </Button>
         {saved && (
-          <span className="flex items-center gap-1 text-xs font-medium text-emerald-600">
+          <span className="ml-1 flex items-center gap-1 text-xs font-medium text-emerald-600">
             <Check className="size-3.5" /> Saved
           </span>
         )}

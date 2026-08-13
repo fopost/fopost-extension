@@ -56,9 +56,13 @@ Two consequences of living in the page, both by design:
 
 ## Setup
 
-Create an API key in OwlStack (**Settings → API keys**) and paste it into the extension's Settings
-screen. That key is the only thing to configure: the API address is fixed at build time, so there
-is no server field for a user to get wrong or point somewhere else.
+A fresh install opens on a guide: what the extension does, and the three steps to start (create an
+OwlStack account, issue an API key, paste it in). It stays until a key is saved, because nothing
+else in the panel can load without one. Settings stays reachable throughout, since that is where
+the key goes.
+
+The key is the only thing to configure. The API address is fixed at build time, so there is no
+server field for a user to get wrong or point somewhere else.
 
 | Permission on the key | Needed for                                                                    |
 | :-------------------- | :---------------------------------------------------------------------------- |
