@@ -16,6 +16,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "test": "vitest run",
     "lint": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -42,7 +43,8 @@
     "prettier": "^3.4.2",
     "tailwindcss": "^4.3.3",
     "typescript": "5.9.3",
-    "vite": "^6.0.7"
+    "vite": "^6.0.7",
+    "vitest": "^3.2.7"
   },
   "engines": {
     "node": ">=22"

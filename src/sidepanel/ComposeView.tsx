@@ -13,7 +13,9 @@ import { CalendarClock, Check, Sparkles, X } from 'lucide-react';
 import { dataUrlToBlob, fetchImageFromTab, seedCaption } from '../lib/capture.js';
 import PlatformIcon from '../components/PlatformIcon.js';
 import { Button } from '../components/ui/button.js';
-import { Field, Input, Textarea } from '../components/ui/field.js';
+import { Field, Textarea } from '../components/ui/field.js';
+import { DateTimePicker } from '../components/ui/date-time-picker.js';
+import { toLocalValue } from '../lib/datetime.js';
 import { cn } from '../lib/utils.js';
 import type { Account, PageCapture, PlatformInfo, UploadedMedia } from '../lib/types.js';
 
@@ -32,11 +34,9 @@ interface CapturedImage {
   name: string;
 }
 
-/** Local datetime string for <input type="datetime-local">, one hour out. */
+/** Default schedule: one hour out, in the picker's local format. */
 function defaultScheduleValue(): string {
-  const when = new Date(Date.now() + 60 * 60 * 1000);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${when.getFullYear()}-${pad(when.getMonth() + 1)}-${pad(when.getDate())}T${pad(when.getHours())}:${pad(when.getMinutes())}`;
+  return toLocalValue(new Date(Date.now() + 60 * 60 * 1000));
 }
 
 export default function ComposeView({ capture, tabId, onDiscard }: Props) {
@@ -373,13 +373,8 @@ export default function ComposeView({ capture, tabId, onDiscard }: Props) {
 
         {/* Schedule */}
         {showSchedule ? (
-          <Field label="Publish at" htmlFor="schedule-at">
-            <Input
-              id="schedule-at"
-              type="datetime-local"
-              value={scheduleAt}
-              onChange={(e) => setScheduleAt(e.target.value)}
-            />
+          <Field label="Publish at">
+            <DateTimePicker value={scheduleAt} onChange={setScheduleAt} />
           </Field>
         ) : (
           <Button variant="link" size="sm" className="px-0" onClick={() => setShowSchedule(true)}>
