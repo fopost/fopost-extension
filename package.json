@@ -22,16 +22,25 @@
     "zip": "cd dist && zip -r ../owlstack-extension.zip ."
   },
   "dependencies": {
+    "@radix-ui/react-checkbox": "^1.3.11",
+    "@radix-ui/react-slot": "^1.3.3",
+    "@radix-ui/react-tabs": "^1.1.21",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.31.0",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.0-beta.26",
+    "@tailwindcss/vite": "^4.3.3",
     "@types/chrome": "^0.0.287",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
     "prettier": "^3.4.2",
+    "tailwindcss": "^4.3.3",
     "typescript": "5.9.3",
     "vite": "^6.0.7"
   },
