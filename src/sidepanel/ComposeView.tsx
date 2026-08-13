@@ -19,6 +19,9 @@ import { toLocalValue } from '../lib/datetime.js';
 import { cn } from '../lib/utils.js';
 import type { Account, PageCapture, PlatformInfo, UploadedMedia } from '../lib/types.js';
 
+/** Starting points, so the field is not an empty box with no hint of its use. */
+const AI_PROMPT_EXAMPLES = ['Write it in Persian', 'Make it shorter', 'More formal', 'Add a hook'];
+
 /** Matches AI_FEATURES.ai_caption.defaultCredits on the API. */
 const CAPTION_CREDIT_COST = 1;
 
@@ -48,6 +51,8 @@ export default function ComposeView({ capture, tabId, onDiscard }: Props) {
   const [imageNote, setImageNote] = useState<string | null>(null);
   const [scheduleAt, setScheduleAt] = useState(defaultScheduleValue);
   const [showSchedule, setShowSchedule] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [showAiPrompt, setShowAiPrompt] = useState(false);
   const [credits, setCredits] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<null | 'ai' | 'now' | 'schedule'>(null);
@@ -162,6 +167,7 @@ export default function ComposeView({ capture, tabId, onDiscard }: Props) {
         platforms: [...new Set(selectedAccounts.map((a) => a.platform))],
         char_limit: tightest,
         workspace_id: activeWorkspace,
+        instructions: aiPrompt.trim() || undefined,
       });
       setCaption(result.caption);
       setCredits(result.remaining);
@@ -170,7 +176,7 @@ export default function ComposeView({ capture, tabId, onDiscard }: Props) {
     } finally {
       setBusy(null);
     }
-  }, [activeWorkspace, capture, selectedAccounts, platformLimits]);
+  }, [activeWorkspace, capture, selectedAccounts, platformLimits, aiPrompt]);
 
   const submit = useCallback(
     async (mode: 'now' | 'schedule') => {
@@ -312,19 +318,57 @@ export default function ComposeView({ capture, tabId, onDiscard }: Props) {
           />
         </Field>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={busy !== null || selected.length === 0}
-            onClick={() => void runAiCaption()}
-          >
-            <Sparkles className="text-accent" />
-            {busy === 'ai' ? 'Writing…' : 'Write with AI'}
-          </Button>
-          <span className="text-[11px] text-slate-400">
-            {CAPTION_CREDIT_COST} credit{credits !== null ? ` · ${credits} left` : ''}
-          </span>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={busy !== null || selected.length === 0}
+              onClick={() => void runAiCaption()}
+            >
+              <Sparkles className="text-accent" />
+              {busy === 'ai' ? 'Writing…' : 'Write with AI'}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-expanded={showAiPrompt}
+              onClick={() => setShowAiPrompt((v) => !v)}
+              className={cn(showAiPrompt && 'text-accent')}
+            >
+              {aiPrompt.trim() ? 'Edit instruction' : 'Add instruction'}
+            </Button>
+            <span className="ml-auto text-[11px] text-slate-400">
+              {CAPTION_CREDIT_COST} credit{credits !== null ? ` · ${credits} left` : ''}
+            </span>
+          </div>
+
+          {showAiPrompt && (
+            <div className="space-y-1.5">
+              <Textarea
+                aria-label="Instruction for the AI"
+                rows={2}
+                value={aiPrompt}
+                placeholder="Write it in Persian. Keep it playful."
+                onChange={(e) => setAiPrompt(e.target.value)}
+              />
+              <div className="flex flex-wrap gap-1.5">
+                {AI_PROMPT_EXAMPLES.map((example) => (
+                  <button
+                    key={example}
+                    type="button"
+                    onClick={() => setAiPrompt(example)}
+                    className="rounded-full border border-slate-200 px-2.5 py-1 text-[11px] text-slate-600 transition-colors hover:bg-slate-50"
+                  >
+                    {example}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Kept for the next rewrite, so you can run it again after editing.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Destinations */}

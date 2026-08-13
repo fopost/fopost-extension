@@ -146,6 +146,8 @@ export async function generateCaption(input: {
   platforms: string[];
   char_limit?: number;
   workspace_id: string;
+  /** Free text from the user, e.g. a language or a tone to write in. */
+  instructions?: string;
 }): Promise<{ caption: string; charged: number; remaining: number }> {
   const data = await request<{
     data: { caption: string; credits: { charged: number; remaining: number } };
