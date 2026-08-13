@@ -20,7 +20,8 @@ export default defineManifest({
     '128': 'icon-128.png',
   },
   action: {
-    default_popup: 'src/popup/index.html',
+    // No default_popup: clicking the toolbar icon opens the side panel, wired
+    // in background.ts via sidePanel.setPanelBehavior.
     default_title: 'OwlStack Publisher',
     default_icon: {
       '16': 'icon-16.png',
@@ -28,6 +29,9 @@ export default defineManifest({
       '48': 'icon-48.png',
       '128': 'icon-128.png',
     },
+  },
+  side_panel: {
+    default_path: 'src/sidepanel/index.html',
   },
   options_page: 'src/options/index.html',
   background: {
@@ -40,6 +44,9 @@ export default defineManifest({
     'notifications',
     'clipboardWrite',
     'contextMenus',
+    // The composer lives in a resizable full-height side panel rather than a
+    // popup, so a long caption and the account list fit without scrolling.
+    'sidePanel',
     // activeTab + scripting are what make "Send to OwlStack" work without a
     // broad host permission: the extractor is injected only into the tab the
     // user right-clicked, only at that moment.

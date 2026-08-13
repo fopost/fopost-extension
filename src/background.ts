@@ -40,6 +40,9 @@ function registerMenus(): void {
   });
 }
 
+// Clicking the toolbar icon opens the side panel instead of a popup.
+void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => undefined);
+
 chrome.runtime.onInstalled.addListener(() => {
   registerMenus();
   chrome.alarms.create(ALARM, { periodInMinutes: POLL_MINUTES });
@@ -94,9 +97,10 @@ async function handleCapture(
     await setPendingCapture(capture, tabId);
 
     try {
-      await chrome.action.openPopup();
+      // A context-menu click is a user gesture, which is what sidePanel.open
+      // requires. The panel reads the stashed capture when it mounts.
+      await chrome.sidePanel.open({ tabId });
     } catch {
-      // openPopup is not available in every Chrome build or window state.
       // The capture is already stashed, so point the user at the toolbar.
       notify('Captured. Click the OwlStack icon to compose.', capture.title);
     }
