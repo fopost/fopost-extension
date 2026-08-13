@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from './button.js';
 import { cn } from '../../lib/utils.js';
@@ -19,9 +19,18 @@ import {
  * 400px overlay pinned to the right edge, that puts the calendar somewhere near
  * the top of the page, detached from the field. No CSS reaches it.
  *
- * This one renders inline, in flow. It cannot be clipped by the scroll
- * container and it cannot land outside the panel.
+ * This one is ours. It floats above the panel's content rather than pushing it
+ * down, and it opens upward, because the field sits near the bottom of a form
+ * the user has already scrolled through.
+ *
+ * Position is fixed and measured from the trigger, not absolute: the scrolling
+ * region has `overflow-y-auto`, which would clip an absolutely positioned child
+ * the moment it extended past the field.
  */
+
+/** Enough room for presets, six week rows and the time row. */
+const POPOVER_HEIGHT = 360;
+const GAP = 8;
 
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -37,6 +46,57 @@ export function DateTimePicker({
     () => new Date(selected.getFullYear(), selected.getMonth(), 1),
   );
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const [box, setBox] = useState<{ left: number; width: number; top?: number; bottom?: number }>();
+
+  // Measured against the viewport, so the popover has to follow the trigger
+  // when the form behind it scrolls.
+  useLayoutEffect(() => {
+    if (!open) return;
+
+    const place = () => {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const height = popoverRef.current?.offsetHeight ?? POPOVER_HEIGHT;
+      const fitsAbove = rect.top >= height + GAP;
+      setBox({
+        left: rect.left,
+        width: rect.width,
+        // Prefer opening upward; fall back down only when the top is cramped.
+        ...(fitsAbove
+          ? { bottom: window.innerHeight - rect.top + GAP }
+          : { top: rect.bottom + GAP }),
+      });
+    };
+
+    place();
+    window.addEventListener('resize', place);
+    // Capture phase, because the scrolling ancestor is not the window.
+    window.addEventListener('scroll', place, true);
+    return () => {
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (popoverRef.current?.contains(target) || triggerRef.current?.contains(target)) return;
+      setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
 
   const today = startOfDay(new Date());
   const days = useMemo(() => monthGrid(month), [month]);
@@ -59,6 +119,7 @@ export function DateTimePicker({
   return (
     <div className="space-y-2">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
@@ -81,7 +142,11 @@ export function DateTimePicker({
       </button>
 
       {open && (
-        <div className="space-y-3 rounded-lg border border-slate-200 p-3">
+        <div
+          ref={popoverRef}
+          style={box}
+          className="fixed z-50 space-y-3 rounded-xl border border-slate-200 bg-white p-3 shadow-xl shadow-slate-900/10"
+        >
           <div className="flex flex-wrap gap-1.5">
             {presets().map((preset) => (
               <button
