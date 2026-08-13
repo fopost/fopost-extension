@@ -1,13 +1,24 @@
 {
-  "name": "@owlstack/extension",
+  "name": "owlstack-extension",
   "version": "0.2.0",
   "private": true,
   "type": "module",
+  "license": "MIT",
   "description": "OwlStack browser extension: capture any page, image, or link into a scheduled social post, and publish content to platforms with no write API (Substack).",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/owlstacks/owlstack-extension.git"
+  },
+  "homepage": "https://owlstack.app",
+  "bugs": {
+    "url": "https://github.com/owlstacks/owlstack-extension/issues"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "lint": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "zip": "cd dist && zip -r ../owlstack-extension.zip ."
   },
   "dependencies": {
@@ -15,13 +26,16 @@
     "react-dom": "19.2.3"
   },
   "devDependencies": {
-    "@owlstack/tsconfig": "workspace:*",
     "@crxjs/vite-plugin": "^2.0.0-beta.26",
     "@types/chrome": "^0.0.287",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
+    "prettier": "^3.4.2",
     "typescript": "5.9.3",
     "vite": "^6.0.7"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

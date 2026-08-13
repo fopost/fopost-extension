@@ -35,12 +35,12 @@ into a social platform on your behalf.
 
 Create an API key in OwlStack (**Settings → API keys**) and paste it into the extension options.
 
-| Permission on the key | Needed for |
-|:---|:---|
-| `posts` | Creating and publishing the captured post; uploading media |
-| `accounts` | Listing the accounts shown in the picker |
-| `extension` | Reading and updating the manual-delivery queue |
-| `ai` | **Write with AI** only. Leave it off and the button reports it is unavailable |
+| Permission on the key | Needed for                                                                    |
+| :-------------------- | :---------------------------------------------------------------------------- |
+| `posts`               | Creating and publishing the captured post; uploading media                    |
+| `accounts`            | Listing the accounts shown in the picker                                      |
+| `extension`           | Reading and updating the manual-delivery queue                                |
+| `ai`                  | **Write with AI** only. Leave it off and the button reports it is unavailable |
 
 The `ai` permission is deliberately separate from `posts`, because it spends AI credits.
 
@@ -49,16 +49,16 @@ The `ai` permission is deliberately separate from `posts`, because it spends AI 
 What the manifest asks for and why. This is the text to paste into the Chrome Web Store's
 single-purpose and permission-justification fields.
 
-| Permission | Why |
-|:---|:---|
-| `activeTab` | Reads the page you explicitly acted on — a right-click on our menu item, or a click on our toolbar icon. Access is granted by that gesture, for that tab, and expires. |
-| `scripting` | Injects the one-off extractor that reads the title, canonical URL, `og:` tags, visible text, and the image you selected. Nothing is injected until you invoke the extension. |
-| `contextMenus` | Provides the "Send to OwlStack" entries on page, selection, image, and link contexts. |
-| `storage` | Stores your API key and API base URL on this device, plus the in-flight capture in session storage. |
-| `alarms` | Runs the 5-minute poll for content that is due for manual publishing. |
-| `notifications` | Tells you when scheduled content is ready to publish by hand. |
-| `clipboardWrite` | Copies the queued title / body / image so you can paste it into the target platform. |
-| `host_permissions: https://api.owlstack.app/*` | The OwlStack API — the only server this extension contacts. `http://localhost:8080/*` is present for local development. |
+| Permission                                     | Why                                                                                                                                                                          |
+| :--------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `activeTab`                                    | Reads the page you explicitly acted on — a right-click on our menu item, or a click on our toolbar icon. Access is granted by that gesture, for that tab, and expires.       |
+| `scripting`                                    | Injects the one-off extractor that reads the title, canonical URL, `og:` tags, visible text, and the image you selected. Nothing is injected until you invoke the extension. |
+| `contextMenus`                                 | Provides the "Send to OwlStack" entries on page, selection, image, and link contexts.                                                                                        |
+| `storage`                                      | Stores your API key and API base URL on this device, plus the in-flight capture in session storage.                                                                          |
+| `alarms`                                       | Runs the 5-minute poll for content that is due for manual publishing.                                                                                                        |
+| `notifications`                                | Tells you when scheduled content is ready to publish by hand.                                                                                                                |
+| `clipboardWrite`                               | Copies the queued title / body / image so you can paste it into the target platform.                                                                                         |
+| `host_permissions: https://api.owlstack.app/*` | The OwlStack API — the only server this extension contacts. `http://localhost:8080/*` is present for local development.                                                      |
 
 Deliberately **not** requested:
 
@@ -76,14 +76,22 @@ Privacy policy: <https://owlstack.app/privacy-policy>
 ## Develop
 
 ```bash
-pnpm --filter @owlstack/extension dev       # Vite dev server + HMR
-pnpm --filter @owlstack/extension build     # type-check + production build to dist/
-pnpm --filter @owlstack/extension zip       # zip dist/ for the Chrome Web Store
+npm install
+npm run dev       # Vite dev server + HMR
+npm run build     # type-check + production build to dist/
+npm run zip       # zip dist/ for the Chrome Web Store
 ```
 
 Load `dist/` via `chrome://extensions` → Developer mode → Load unpacked.
 
 Point the options page at `http://localhost:8080` to develop against a local API.
+
+## Release
+
+Bump `version` in `package.json` (`src/manifest.config.ts` reads its own copy, so bump both), tag
+the commit `v<version>`, and push the tag. CI verifies the tag, the manifest version, and the host
+permissions, then builds the store zip and attaches it to the GitHub release. Uploading to the
+Chrome Web Store stays manual, because each submission needs listing review.
 
 ## Chrome Web Store submission
 
