@@ -68,13 +68,23 @@ chrome.storage.onChanged.addListener((_changes, area) => {
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   const source = MENU_SOURCES[String(info.menuItemId)];
   if (!source || !tab?.id) return;
-  void handleCapture(source, info, tab.id);
+
+  // Open the panel first, in the same turn as the click. Chrome only honours
+  // sidePanel.open while the user gesture is still live, and reading the page
+  // takes long enough to lose it.
+  const opened = chrome.sidePanel
+    .open({ tabId: tab.id })
+    .then(() => true)
+    .catch(() => false);
+
+  void handleCapture(source, info, tab.id, opened);
 });
 
 async function handleCapture(
   source: PageCapture['source'],
   info: chrome.contextMenus.OnClickData,
   tabId: number,
+  opened: Promise<boolean>,
 ): Promise<void> {
   const { apiKey } = await getSettings();
   if (!apiKey) {
@@ -94,14 +104,11 @@ async function handleCapture(
     // selection API has since collapsed, so prefer it when present.
     if (info.selectionText) capture.selection = info.selectionText;
 
+    // The panel watches session storage, so it picks this up whether it opened
+    // just now or was already sitting open from an earlier capture.
     await setPendingCapture(capture, tabId);
 
-    try {
-      // A context-menu click is a user gesture, which is what sidePanel.open
-      // requires. The panel reads the stashed capture when it mounts.
-      await chrome.sidePanel.open({ tabId });
-    } catch {
-      // The capture is already stashed, so point the user at the toolbar.
+    if (!(await opened)) {
       notify('Captured. Click the OwlStack icon to compose.', capture.title);
     }
   } catch {
