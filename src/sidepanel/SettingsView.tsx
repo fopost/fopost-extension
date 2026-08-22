@@ -48,7 +48,7 @@ export default function SettingsView() {
           id="api-key"
           type="password"
           value={apiKey}
-          placeholder="osk_…"
+          placeholder="fp_…"
           onChange={(e) => setApiKey(e.target.value)}
         />
       </Field>
