@@ -37,9 +37,9 @@ export default function SettingsView() {
       <div className="flex items-start gap-2.5 rounded-lg bg-accent-soft p-3">
         <KeyRound className="mt-0.5 size-4 shrink-0 text-accent" />
         <p className="text-xs leading-relaxed text-slate-600">
-          Create an API key in OwlStack under{' '}
+          Create an API key in FoPost under{' '}
           <span className="font-medium text-slate-800">Settings → API keys</span>. It is stored on
-          this device only, and the extension talks to no server other than OwlStack.
+          this device only, and the extension talks to no server other than FoPost.
         </p>
       </div>
 

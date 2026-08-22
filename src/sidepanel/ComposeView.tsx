@@ -460,7 +460,7 @@ function aiErrorMessage(err: unknown): string {
   if (err instanceof ApiError) {
     if (err.code === 'insufficient_credits') return 'You are out of AI credits.';
     if (err.status === 403) {
-      return "This API key can't use AI. Add the 'ai' permission to it in OwlStack settings.";
+      return "This API key can't use AI. Add the 'ai' permission to it in FoPost settings.";
     }
   }
   return err instanceof Error ? err.message : 'AI caption failed.';

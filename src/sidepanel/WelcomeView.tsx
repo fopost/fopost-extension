@@ -13,7 +13,7 @@ const WHAT_IT_DOES: { icon: ComponentType<{ className?: string }>; title: string
     {
       icon: ListChecks,
       title: 'Publish what has no API',
-      body: 'Substack has no publishing API, so OwlStack hands you the finished post here and you press publish yourself. Nothing is automated on your behalf.',
+      body: 'Substack has no publishing API, so FoPost hands you the finished post here and you press publish yourself. Nothing is automated on your behalf.',
     },
   ];
 
@@ -27,9 +27,9 @@ export default function WelcomeView({ onOpenSettings }: { onOpenSettings: () => 
   return (
     <div className="space-y-5 px-4 py-5">
       <div>
-        <h1 className="text-base font-semibold tracking-tight">Welcome to OwlStack Publisher</h1>
+        <h1 className="text-base font-semibold tracking-tight">Welcome to FoPost Publisher</h1>
         <p className="mt-1 text-xs leading-relaxed text-slate-500">
-          It connects this browser to your OwlStack account. Two things it does:
+          It connects this browser to your FoPost account. Two things it does:
         </p>
       </div>
 
@@ -53,7 +53,7 @@ export default function WelcomeView({ onOpenSettings }: { onOpenSettings: () => 
         <ol className="space-y-3">
           <Step
             n={1}
-            title="Create an OwlStack account"
+            title="Create an FoPost account"
             body="The extension needs an account to post from. There is a free trial."
           >
             <Button variant="secondary" size="sm" asChild>
@@ -67,7 +67,7 @@ export default function WelcomeView({ onOpenSettings }: { onOpenSettings: () => 
           <Step
             n={2}
             title="Make an API key"
-            body="In OwlStack, go to Settings → API keys. Give it the posts, accounts, and extension permissions, plus ai if you want AI captions."
+            body="In FoPost, go to Settings → API keys. Give it the posts, accounts, and extension permissions, plus ai if you want AI captions."
           >
             <Button variant="secondary" size="sm" asChild>
               <a href={API_KEYS_URL} target="_blank" rel="noreferrer noopener">

@@ -3,7 +3,7 @@ import { cn } from '../lib/utils.js';
 
 /**
  * Platform marks ship as files rather than an icon font, matching the rule the
- * OwlStack apps follow. Most map to `<platform>.svg`; these are the ones whose
+ * FoPost apps follow. Most map to `<platform>.svg`; these are the ones whose
  * file name does not match the platform key the API returns.
  */
 const FILE_OVERRIDES: Record<string, string> = {

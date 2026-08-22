@@ -117,7 +117,7 @@ export default function QueueView({ onCountChange }: { onCountChange?: (n: numbe
       {needsKey && (
         <div className="flex flex-col items-center gap-3 py-10 text-center">
           <p className="text-xs leading-relaxed text-slate-500">
-            That API key was rejected. Check it in Settings, or issue a new one in OwlStack.
+            That API key was rejected. Check it in Settings, or issue a new one in FoPost.
           </p>
           <Button onClick={() => chrome.runtime.openOptionsPage()}>Open settings</Button>
         </div>
