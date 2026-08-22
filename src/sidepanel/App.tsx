@@ -106,7 +106,7 @@ export default function App() {
             size="icon"
             title="Close"
             className="ml-auto -mr-1 size-7"
-            onClick={() => window.parent.postMessage({ type: 'owlstack-close' }, '*')}
+            onClick={() => window.parent.postMessage({ type: 'fopost-close' }, '*')}
           >
             <X />
           </Button>

@@ -9,7 +9,7 @@
  * any site the user browses.
  */
 
-const OVERLAY_ID = 'owlstack-overlay-root';
+const OVERLAY_ID = 'fopost-overlay-root';
 const DEFAULT_WIDTH = 400;
 const MIN_WIDTH = 320;
 const MAX_WIDTH = 640;
@@ -53,7 +53,7 @@ function mountOverlay(
 
   const frame = document.createElement('iframe');
   frame.src = panelUrl;
-  frame.setAttribute('title', 'OwlStack Publisher');
+  frame.setAttribute('title', 'FoPost Publisher');
   frame.style.cssText = [
     'width:100%',
     'height:100%',
@@ -99,7 +99,7 @@ function mountOverlay(
 
   // The panel asks to be dismissed by posting to its parent.
   const onMessage = (event: MessageEvent) => {
-    if ((event.data as { type?: string } | null)?.type !== 'owlstack-close') return;
+    if ((event.data as { type?: string } | null)?.type !== 'fopost-close') return;
     document.getElementById(id)?.remove();
     window.removeEventListener('message', onMessage);
   };
