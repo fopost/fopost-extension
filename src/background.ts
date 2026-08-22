@@ -6,29 +6,30 @@ import type { PageCapture } from './lib/types.js';
 
 // Two jobs live here:
 //
-// 1. Polling the OwlStack API for manual-delivery content whose scheduled time
+// 1. Polling the FoPost API for manual-delivery content whose scheduled time
 //    has passed, surfaced as a badge count plus a notification. The browser
 //    must be running for this to fire; if it was closed at the scheduled time,
 //    the item shows up on the next poll (catch-up reminder).
-// 2. "Send to OwlStack" context menus. A click injects the extractor into that
+// 2. "Send to FoPost" context menus. A click injects the extractor into that
 //    one tab (activeTab), stashes the result, and opens the composer.
 
-const ALARM = 'owlstack-poll';
+const ALARM = 'fopost-poll';
+const LEGACY_ALARM = 'owlstack-poll';
 const POLL_MINUTES = 5;
 const ACCENT = '#4F46E5';
 
 const MENUS: { id: string; title: string; contexts: chrome.contextMenus.ContextType[] }[] = [
-  { id: 'owlstack-page', title: 'Send this page to OwlStack', contexts: ['page'] },
-  { id: 'owlstack-selection', title: 'Send selection to OwlStack', contexts: ['selection'] },
-  { id: 'owlstack-image', title: 'Send image to OwlStack', contexts: ['image'] },
-  { id: 'owlstack-link', title: 'Send link to OwlStack', contexts: ['link'] },
+  { id: 'fopost-page', title: 'Send this page to FoPost', contexts: ['page'] },
+  { id: 'fopost-selection', title: 'Send selection to FoPost', contexts: ['selection'] },
+  { id: 'fopost-image', title: 'Send image to FoPost', contexts: ['image'] },
+  { id: 'fopost-link', title: 'Send link to FoPost', contexts: ['link'] },
 ];
 
 const MENU_SOURCES: Record<string, PageCapture['source']> = {
-  'owlstack-page': 'page',
-  'owlstack-selection': 'selection',
-  'owlstack-image': 'image',
-  'owlstack-link': 'link',
+  'fopost-page': 'page',
+  'fopost-selection': 'selection',
+  'fopost-image': 'image',
+  'fopost-link': 'link',
 };
 
 let lastDueCount = 0;
@@ -48,20 +49,28 @@ chrome.action.onClicked.addListener((tab) => {
   void openOverlay(tab.id, true).then((ok) => {
     if (!ok) {
       notify(
-        'OwlStack cannot open here',
+        'FoPost cannot open here',
         'Some pages (browser settings, the Web Store) block extensions entirely.',
       );
     }
   });
 });
 
+// One-time cleanup: the poll alarm was named `owlstack-poll` before the
+// rebrand and survives an update, so drop it or two alarms poll in parallel.
+function dropLegacyAlarm(): void {
+  void chrome.alarms.clear(LEGACY_ALARM);
+}
+
 chrome.runtime.onInstalled.addListener(() => {
+  dropLegacyAlarm();
   registerMenus();
   chrome.alarms.create(ALARM, { periodInMinutes: POLL_MINUTES });
   void poll();
 });
 
 chrome.runtime.onStartup.addListener(() => {
+  dropLegacyAlarm();
   registerMenus();
   void poll();
 });
@@ -117,11 +126,11 @@ async function handleCapture(
     await setPendingCapture(capture, tabId);
 
     if (!(await opened)) {
-      notify('Captured. Click the OwlStack icon to compose.', capture.title);
+      notify('Captured. Click the FoPost icon to compose.', capture.title);
     }
   } catch {
     notify(
-      'OwlStack could not read this page',
+      'FoPost could not read this page',
       'Some pages (browser settings, the Web Store) block extensions entirely.',
     );
   }
@@ -150,7 +159,7 @@ async function poll(): Promise<void> {
     setBadge(due.length);
     if (due.length > lastDueCount && due.length > 0) {
       notify(
-        'OwlStack: content ready to publish',
+        'FoPost: content ready to publish',
         due.length === 1
           ? `1 post is ready to publish on ${due[0].platform_name}. Open the extension to copy it.`
           : `${due.length} posts are ready to publish. Open the extension to copy them.`,
