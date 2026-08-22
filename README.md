@@ -78,16 +78,16 @@ The `ai` permission is deliberately separate from `posts`, because it spends AI 
 What the manifest asks for and why. This is the text to paste into the Chrome Web Store's
 single-purpose and permission-justification fields.
 
-| Permission                                     | Why                                                                                                                                                                                                        |
-| :--------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `activeTab`                                    | Reads the page you explicitly acted on — a right-click on our menu item, or a click on our toolbar icon. Access is granted by that gesture, for that tab, and expires.                                     |
-| `scripting`                                    | Injects the one-off extractor that reads the title, canonical URL, `og:` tags, visible text, and the image you selected, and mounts the panel overlay. Nothing is injected until you invoke the extension. |
-| `contextMenus`                                 | Provides the "Send to FoPost" entries on page, selection, image, and link contexts.                                                                                                                      |
-| `storage`                                      | Stores your API key and API base URL on this device, plus the in-flight capture in session storage.                                                                                                        |
-| `alarms`                                       | Runs the 5-minute poll for content that is due for manual publishing.                                                                                                                                      |
-| `notifications`                                | Tells you when scheduled content is ready to publish by hand.                                                                                                                                              |
-| `clipboardWrite`                               | Copies the queued title / body / image so you can paste it into the target platform.                                                                                                                       |
-| `host_permissions: https://api.fopost.com/*` | The FoPost API — the only server this extension contacts, and the only host a shipped build asks for.                                                                                                    |
+| Permission                                   | Why                                                                                                                                                                                                        |
+| :------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `activeTab`                                  | Reads the page you explicitly acted on — a right-click on our menu item, or a click on our toolbar icon. Access is granted by that gesture, for that tab, and expires.                                     |
+| `scripting`                                  | Injects the one-off extractor that reads the title, canonical URL, `og:` tags, visible text, and the image you selected, and mounts the panel overlay. Nothing is injected until you invoke the extension. |
+| `contextMenus`                               | Provides the "Send to FoPost" entries on page, selection, image, and link contexts.                                                                                                                        |
+| `storage`                                    | Stores your API key and API base URL on this device, plus the in-flight capture in session storage.                                                                                                        |
+| `alarms`                                     | Runs the 5-minute poll for content that is due for manual publishing.                                                                                                                                      |
+| `notifications`                              | Tells you when scheduled content is ready to publish by hand.                                                                                                                                              |
+| `clipboardWrite`                             | Copies the queued title / body / image so you can paste it into the target platform.                                                                                                                       |
+| `host_permissions: https://api.fopost.com/*` | The FoPost API — the only server this extension contacts, and the only host a shipped build asks for.                                                                                                      |
 
 Deliberately **not** requested:
 
