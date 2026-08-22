@@ -1,5 +1,5 @@
 // Mirrors the API response shapes the extension consumes. Public ids are
-// opaque strings on every OwlStack resource.
+// opaque strings on every FoPost resource.
 
 export interface ExtensionMedia {
   url: string;

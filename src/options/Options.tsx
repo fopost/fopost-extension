@@ -7,7 +7,7 @@ import SettingsView from '../sidepanel/SettingsView.js';
 export default function Options() {
   return (
     <div className="mx-auto max-w-md py-6">
-      <h1 className="px-4 pb-2 text-sm font-semibold tracking-tight">OwlStack Publisher</h1>
+      <h1 className="px-4 pb-2 text-sm font-semibold tracking-tight">FoPost Publisher</h1>
       <SettingsView />
     </div>
   );

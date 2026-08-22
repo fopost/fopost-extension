@@ -100,13 +100,13 @@ export default function App() {
       {framed && (
         <header className="flex shrink-0 items-center gap-2 border-b border-slate-200 px-4 py-2.5">
           <img src={chrome.runtime.getURL('icon-32.png')} alt="" className="size-4" />
-          <span className="text-xs font-semibold tracking-tight">OwlStack Publisher</span>
+          <span className="text-xs font-semibold tracking-tight">FoPost Publisher</span>
           <Button
             variant="ghost"
             size="icon"
             title="Close"
             className="ml-auto -mr-1 size-7"
-            onClick={() => window.parent.postMessage({ type: 'owlstack-close' }, '*')}
+            onClick={() => window.parent.postMessage({ type: 'fopost-close' }, '*')}
           >
             <X />
           </Button>
@@ -135,7 +135,7 @@ export default function App() {
             <p className="text-sm font-medium">Nothing captured yet</p>
             <p className="text-xs leading-relaxed text-slate-500">
               Right-click any page, image, link, or selection and choose{' '}
-              <span className="font-medium text-slate-700">Send to OwlStack</span>.
+              <span className="font-medium text-slate-700">Send to FoPost</span>.
             </p>
             <Button disabled={capturing} onClick={() => void captureCurrentTab()}>
               {capturing ? 'Reading page…' : 'Capture this page'}

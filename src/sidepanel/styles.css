@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 /*
- * Indigo accent, matching the OwlStack apps. The panel is a fixed-height
+ * Indigo accent, matching the FoPost apps. The panel is a fixed-height
  * viewport: html/body never scroll, only the screen body between the header
  * and the bottom nav does.
  */

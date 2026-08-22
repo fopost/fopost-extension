@@ -33,10 +33,7 @@ function parseError(status: number, text: string): ApiError {
 async function authFetch(path: string, init: RequestInit = {}): Promise<Response> {
   const { apiKey } = await getSettings();
   if (!apiKey) {
-    throw new ApiError(
-      0,
-      'No API key set. Open the extension options to add your OwlStack API key.',
-    );
+    throw new ApiError(0, 'No API key set. Open the extension options to add your FoPost API key.');
   }
   return fetch(`${API_BASE_URL}/api/v1${path}`, {
     ...init,
