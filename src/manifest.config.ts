@@ -5,11 +5,11 @@ import { defineManifest } from '@crxjs/vite-plugin';
  * for any site the user browses. Page capture runs through `activeTab` +
  * `scripting`, which only grant access to the one tab the user just acted on,
  * and only for that click. The only standing host permissions are the
- * OwlStack API itself (plus localhost for development).
+ * FoPost API itself (plus localhost for development).
  */
 export default defineManifest((env) => ({
   manifest_version: 3,
-  name: 'OwlStack Publisher',
+  name: 'FoPost Publisher',
   version: '0.2.0',
   description:
     'Capture any page, image, or link and turn it into a scheduled social post. Also queues content for platforms you publish by hand.',
@@ -22,7 +22,7 @@ export default defineManifest((env) => ({
   action: {
     // No default_popup: clicking the toolbar icon injects the overlay panel
     // into the current tab, wired in background.ts.
-    default_title: 'OwlStack Publisher',
+    default_title: 'FoPost Publisher',
     default_icon: {
       '16': 'icon-16.png',
       '32': 'icon-32.png',
@@ -41,7 +41,7 @@ export default defineManifest((env) => ({
     'notifications',
     'clipboardWrite',
     'contextMenus',
-    // activeTab + scripting are what make "Send to OwlStack" work without a
+    // activeTab + scripting are what make "Send to FoPost" work without a
     // broad host permission: the extractor is injected only into the tab the
     // user right-clicked, only at that moment.
     'activeTab',
@@ -57,10 +57,10 @@ export default defineManifest((env) => ({
       matches: ['<all_urls>'],
     },
   ],
-  // Only the OwlStack API. A dev build also reaches a local one; the shipped
+  // Only the FoPost API. A dev build also reaches a local one; the shipped
   // build must not ask for a permission it never uses.
   host_permissions:
     env.mode === 'production'
-      ? ['https://api.owlstack.app/*']
-      : ['https://api.owlstack.app/*', 'http://localhost:8080/*'],
+      ? ['https://api.fopost.com/*']
+      : ['https://api.fopost.com/*', 'http://localhost:8080/*'],
 }));
