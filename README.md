@@ -1,4 +1,4 @@
-# OwlStack Publisher (browser extension)
+# FoPost Publisher (browser extension)
 
 Two jobs in one MV3 extension:
 
@@ -6,25 +6,25 @@ Two jobs in one MV3 extension:
    already filled in: caption seeded from the page, the image imported into your media library,
    per-platform character counts, and Post now / Schedule.
 2. **Manual delivery.** For platforms with no usable write API (Substack today), it holds the
-   content OwlStack scheduled and lets you copy and publish it yourself.
+   content FoPost scheduled and lets you copy and publish it yourself.
 
 ## How capture works
 
-1. Right-click → **Send to OwlStack** (or open the panel and press **Capture this page**).
+1. Right-click → **Send to FoPost** (or open the panel and press **Capture this page**).
 2. The extension injects a small extractor into that one tab and reads the title, canonical URL,
    `og:` metadata, the visible article text, and the image you clicked (falling back to
    `og:image`).
 3. The composer opens with a caption drafted from what it found. **Write with AI** rewrites it
    from the page text, showing the credit cost and your remaining balance before you press it.
-4. Pick accounts, then **Post now** or **Schedule**. Image bytes are uploaded to your OwlStack
+4. Pick accounts, then **Post now** or **Schedule**. Image bytes are uploaded to your FoPost
    media library first, so the post keeps working after the source page changes.
 
-Everything above happens against the OwlStack API with your API key. The extension never signs
+Everything above happens against the FoPost API with your API key. The extension never signs
 into a social platform on your behalf.
 
 ## How manual delivery works
 
-1. OwlStack schedules a post targeting a manual platform. The API stages it as `awaiting_manual`.
+1. FoPost schedules a post targeting a manual platform. The API stages it as `awaiting_manual`.
 2. The extension polls `GET /api/v1/extension/due` every 5 minutes (and on open). When something
    is due it shows a badge count and a notification.
 3. Open the panel's **Queue** screen, copy the title / body / image, paste into the platform,
@@ -39,7 +39,7 @@ side panel. That is deliberate: the side panel is browser chrome, so it reserves
 the tab, shrinking the site the user is reading. An overlay floats above the page instead, so the
 page keeps its full width. Drag its left edge to resize.
 
-Clicking the toolbar icon toggles it. A "Send to OwlStack" context-menu click opens it and lands
+Clicking the toolbar icon toggles it. A "Send to FoPost" context-menu click opens it and lands
 on the composer. Injection happens on demand through `activeTab`, granted by that click, so the
 extension still holds no standing permission on any site.
 
@@ -57,7 +57,7 @@ Two consequences of living in the page, both by design:
 ## Setup
 
 A fresh install opens on a guide: what the extension does, and the three steps to start (create an
-OwlStack account, issue an API key, paste it in). It stays until a key is saved, because nothing
+FoPost account, issue an API key, paste it in). It stays until a key is saved, because nothing
 else in the panel can load without one. Settings stays reachable throughout, since that is where
 the key goes.
 
@@ -82,12 +82,12 @@ single-purpose and permission-justification fields.
 | :--------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `activeTab`                                    | Reads the page you explicitly acted on — a right-click on our menu item, or a click on our toolbar icon. Access is granted by that gesture, for that tab, and expires.                                     |
 | `scripting`                                    | Injects the one-off extractor that reads the title, canonical URL, `og:` tags, visible text, and the image you selected, and mounts the panel overlay. Nothing is injected until you invoke the extension. |
-| `contextMenus`                                 | Provides the "Send to OwlStack" entries on page, selection, image, and link contexts.                                                                                                                      |
+| `contextMenus`                                 | Provides the "Send to FoPost" entries on page, selection, image, and link contexts.                                                                                                                      |
 | `storage`                                      | Stores your API key and API base URL on this device, plus the in-flight capture in session storage.                                                                                                        |
 | `alarms`                                       | Runs the 5-minute poll for content that is due for manual publishing.                                                                                                                                      |
 | `notifications`                                | Tells you when scheduled content is ready to publish by hand.                                                                                                                                              |
 | `clipboardWrite`                               | Copies the queued title / body / image so you can paste it into the target platform.                                                                                                                       |
-| `host_permissions: https://api.owlstack.app/*` | The OwlStack API — the only server this extension contacts, and the only host a shipped build asks for.                                                                                                    |
+| `host_permissions: https://api.fopost.com/*` | The FoPost API — the only server this extension contacts, and the only host a shipped build asks for.                                                                                                    |
 
 Deliberately **not** requested:
 
@@ -103,7 +103,7 @@ Deliberately **not** requested:
   media import needs no permission on the image's CDN. If a cross-origin image blocks that read,
   the composer says so and lets you post text-only rather than silently hotlinking.
 
-Privacy policy: <https://owlstack.app/privacy-policy>
+Privacy policy: <https://fopost.com/privacy-policy>
 
 ## Develop
 
@@ -117,7 +117,7 @@ npm run zip       # zip dist/ for the Chrome Web Store
 Load `dist/` via `chrome://extensions` → Developer mode → Load unpacked.
 
 A `npm run dev` build talks to `http://localhost:8080`; a production build talks to
-`https://api.owlstack.app`, and only that build carries the matching host permission. Set
+`https://api.fopost.com`, and only that build carries the matching host permission. Set
 `VITE_API_BASE_URL` to point a build anywhere else, which is how a staging build is made.
 
 ## Release
@@ -133,14 +133,14 @@ Ready in the repo:
 
 - **Icons** — `public/icon-{16,32,48,128}.png`, wired into `icons` and `action.default_icon`.
 - **Permissions justification** — the table above.
-- **Privacy policy URL** — <https://owlstack.app/privacy-policy>.
-- **Single purpose** — "Capture web content into your OwlStack account and publish or schedule it
+- **Privacy policy URL** — <https://fopost.com/privacy-policy>.
+- **Single purpose** — "Capture web content into your FoPost account and publish or schedule it
   to your connected social accounts."
 
 Still to produce by hand before submitting (they require a running browser):
 
 - **Screenshots**, 1280×800 or 640×400, at least one, up to five. Shot list:
-  1. Right-click menu open on an article image, showing "Send image to OwlStack".
+  1. Right-click menu open on an article image, showing "Send image to FoPost".
   2. The composer with the image preview, prefilled caption, and character counts.
   3. The account picker with several platforms selected.
   4. The schedule field with a date chosen.
