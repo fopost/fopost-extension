@@ -47,7 +47,7 @@ jobs:
       - name: Build store zip
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          cd dist && zip -r "../owlstack-extension-$VERSION.zip" .
+          cd dist && zip -r "../fopost-extension-$VERSION.zip" .
 
       - name: Attach zip to the release
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
@@ -55,7 +55,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          gh release create "$GITHUB_REF_NAME" "owlstack-extension-$VERSION.zip" \
+          gh release create "$GITHUB_REF_NAME" "fopost-extension-$VERSION.zip" \
             --title "$GITHUB_REF_NAME" \
             --generate-notes \
-            || gh release upload "$GITHUB_REF_NAME" "owlstack-extension-$VERSION.zip" --clobber
+            || gh release upload "$GITHUB_REF_NAME" "fopost-extension-$VERSION.zip" --clobber

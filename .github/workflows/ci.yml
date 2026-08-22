@@ -49,10 +49,10 @@ jobs:
       # A production build reaches exactly one host. localhost belongs to dev
       # builds only, and shipping it asks the store for a permission we never
       # use.
-      - name: Verify only the OwlStack API is reachable
+      - name: Verify only the FoPost API is reachable
         run: |
           HOSTS=$(node -p "JSON.parse(require('fs').readFileSync('dist/manifest.json','utf8')).host_permissions.join(' ')")
-          [ "$HOSTS" = "https://api.owlstack.app/*" ] \
+          [ "$HOSTS" = "https://api.fopost.com/*" ] \
             || { echo "::error::unexpected host permissions: $HOSTS"; exit 1; }
           ! grep -rq "localhost:8080" dist/assets/*.js \
             || { echo "::error::a dev API URL is baked into the shipped bundle"; exit 1; }
