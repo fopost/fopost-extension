@@ -1,8 +1,9 @@
 name: Release
 
 # Tag the commit as v<version> matching package.json, e.g. v0.2.0. The job
-# builds the store zip and attaches it to a GitHub release; uploading to the
-# Chrome Web Store stays manual, since each submission needs listing review.
+# builds one store zip per browser and attaches both to a GitHub release.
+# Uploading them stays manual: the Chrome Web Store and AMO each review their
+# own listing, and the two reviews do not run on the same clock.
 on:
   push:
     tags:
@@ -37,25 +38,32 @@ jobs:
 
       - run: npm run lint
       - run: npm run build
+      - run: npm run lint:firefox
 
       - name: Verify manifest version matches package.json
         run: |
-          MANIFEST=$(node -p "JSON.parse(require('fs').readFileSync('dist/manifest.json','utf8')).version")
           VERSION=$(node -p "require('./package.json').version")
-          [ "$MANIFEST" = "$VERSION" ] || { echo "::error::manifest is $MANIFEST but package.json is $VERSION"; exit 1; }
+          for target in chrome firefox; do
+            MANIFEST=$(node -p "JSON.parse(require('fs').readFileSync('dist/$target/manifest.json','utf8')).version")
+            [ "$MANIFEST" = "$VERSION" ] \
+              || { echo "::error::$target manifest is $MANIFEST but package.json is $VERSION"; exit 1; }
+          done
 
-      - name: Build store zip
+      - name: Build store zips
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          cd dist && zip -r "../fopost-extension-$VERSION.zip" .
+          for target in chrome firefox; do
+            (cd "dist/$target" && zip -r "../../fopost-extension-$target-$VERSION.zip" .)
+          done
 
-      - name: Attach zip to the release
+      - name: Attach zips to the release
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          gh release create "$GITHUB_REF_NAME" "fopost-extension-$VERSION.zip" \
+          ZIPS="fopost-extension-chrome-$VERSION.zip fopost-extension-firefox-$VERSION.zip"
+          gh release create "$GITHUB_REF_NAME" $ZIPS \
             --title "$GITHUB_REF_NAME" \
             --generate-notes \
-            || gh release upload "$GITHUB_REF_NAME" "fopost-extension-$VERSION.zip" --clobber
+            || gh release upload "$GITHUB_REF_NAME" $ZIPS --clobber
