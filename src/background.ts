@@ -1,3 +1,5 @@
+import type { Menus } from 'webextension-polyfill';
+import browser from './lib/browser.js';
 import { fetchDue } from './lib/api.js';
 import { getSettings } from './lib/storage.js';
 import { captureTab, setPendingCapture } from './lib/capture.js';
@@ -18,7 +20,7 @@ const LEGACY_ALARM = 'owlstack-poll';
 const POLL_MINUTES = 5;
 const ACCENT = '#4F46E5';
 
-const MENUS: { id: string; title: string; contexts: chrome.contextMenus.ContextType[] }[] = [
+const MENUS: { id: string; title: string; contexts: Menus.ContextType[] }[] = [
   { id: 'fopost-page', title: 'Send this page to FoPost', contexts: ['page'] },
   { id: 'fopost-selection', title: 'Send selection to FoPost', contexts: ['selection'] },
   { id: 'fopost-image', title: 'Send image to FoPost', contexts: ['image'] },
@@ -34,17 +36,16 @@ const MENU_SOURCES: Record<string, PageCapture['source']> = {
 
 let lastDueCount = 0;
 
-function registerMenus(): void {
-  chrome.contextMenus.removeAll(() => {
-    for (const menu of MENUS) {
-      chrome.contextMenus.create({ id: menu.id, title: menu.title, contexts: menu.contexts });
-    }
-  });
+async function registerMenus(): Promise<void> {
+  await browser.contextMenus.removeAll();
+  for (const menu of MENUS) {
+    browser.contextMenus.create({ id: menu.id, title: menu.title, contexts: menu.contexts });
+  }
 }
 
 // Clicking the toolbar icon toggles the in-page overlay. The click is what
 // grants activeTab, which is all the injection needs.
-chrome.action.onClicked.addListener((tab) => {
+browser.action.onClicked.addListener((tab) => {
   if (!tab.id) return;
   void openOverlay(tab.id, true).then((ok) => {
     if (!ok) {
@@ -59,34 +60,34 @@ chrome.action.onClicked.addListener((tab) => {
 // One-time cleanup: the poll alarm was named `owlstack-poll` before the
 // rebrand and survives an update, so drop it or two alarms poll in parallel.
 function dropLegacyAlarm(): void {
-  void chrome.alarms.clear(LEGACY_ALARM);
+  void browser.alarms.clear(LEGACY_ALARM);
 }
 
-chrome.runtime.onInstalled.addListener(() => {
+browser.runtime.onInstalled.addListener(() => {
   dropLegacyAlarm();
-  registerMenus();
-  chrome.alarms.create(ALARM, { periodInMinutes: POLL_MINUTES });
+  void registerMenus();
+  browser.alarms.create(ALARM, { periodInMinutes: POLL_MINUTES });
   void poll();
 });
 
-chrome.runtime.onStartup.addListener(() => {
+browser.runtime.onStartup.addListener(() => {
   dropLegacyAlarm();
-  registerMenus();
+  void registerMenus();
   void poll();
 });
 
-chrome.alarms.onAlarm.addListener((alarm) => {
+browser.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === ALARM) void poll();
 });
 
 // Re-poll as soon as settings (API key / base URL) change.
-chrome.storage.onChanged.addListener((_changes, area) => {
+browser.storage.onChanged.addListener((_changes, area) => {
   if (area === 'local') void poll();
 });
 
 // ─── Context menu capture ─────────────────────────────────────────
 
-chrome.contextMenus.onClicked.addListener((info, tab) => {
+browser.contextMenus.onClicked.addListener((info, tab) => {
   const source = MENU_SOURCES[String(info.menuItemId)];
   if (!source || !tab?.id) return;
 
@@ -99,13 +100,13 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
 async function handleCapture(
   source: PageCapture['source'],
-  info: chrome.contextMenus.OnClickData,
+  info: Menus.OnClickData,
   tabId: number,
   opened: Promise<boolean>,
 ): Promise<void> {
   const { apiKey } = await getSettings();
   if (!apiKey) {
-    chrome.runtime.openOptionsPage();
+    browser.runtime.openOptionsPage();
     return;
   }
 
@@ -137,14 +138,14 @@ async function handleCapture(
 }
 
 function notify(title: string, message: string): void {
-  chrome.notifications.create({ type: 'basic', iconUrl: 'icon-128.png', title, message });
+  browser.notifications.create({ type: 'basic', iconUrl: 'icon-128.png', title, message });
 }
 
 // ─── Manual-delivery queue polling ────────────────────────────────
 
 function setBadge(count: number): void {
-  void chrome.action.setBadgeBackgroundColor({ color: ACCENT });
-  void chrome.action.setBadgeText({ text: count > 0 ? String(count) : '' });
+  void browser.action.setBadgeBackgroundColor({ color: ACCENT });
+  void browser.action.setBadgeText({ text: count > 0 ? String(count) : '' });
 }
 
 async function poll(): Promise<void> {

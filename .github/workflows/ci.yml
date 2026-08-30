@@ -28,18 +28,41 @@ jobs:
       - run: npm test
       - run: npm run build
 
+      # web-ext runs the same checks AMO runs at submission, so a manifest key
+      # Firefox does not support fails here rather than at review.
+      - run: npm run lint:firefox
+
       - name: Verify manifest version matches package.json
         run: |
-          MANIFEST=$(node -p "JSON.parse(require('fs').readFileSync('dist/manifest.json','utf8')).version")
           VERSION=$(node -p "require('./package.json').version")
-          [ "$MANIFEST" = "$VERSION" ] || { echo "::error::manifest is $MANIFEST but package.json is $VERSION"; exit 1; }
+          for target in chrome firefox; do
+            MANIFEST=$(node -p "JSON.parse(require('fs').readFileSync('dist/$target/manifest.json','utf8')).version")
+            [ "$MANIFEST" = "$VERSION" ] \
+              || { echo "::error::$target manifest is $MANIFEST but package.json is $VERSION"; exit 1; }
+          done
+
+      # The whole point of the two targets. Chrome MV3 runs the background in a
+      # service worker; Firefox MV3 has none and needs an event page. Either one
+      # built with the other's shape installs and then does nothing at all, with
+      # no build error, so pin both shapes here.
+      - name: Verify each target got its own background shape
+        run: |
+          node -e "
+            const read = (t) => JSON.parse(require('fs').readFileSync('dist/'+t+'/manifest.json','utf8'));
+            const chrome = read('chrome').background;
+            const firefox = read('firefox').background;
+            if (!chrome.service_worker || chrome.scripts) throw new Error('chrome build is not a service worker: ' + JSON.stringify(chrome));
+            if (!firefox.scripts || firefox.service_worker) throw new Error('firefox build is not an event page: ' + JSON.stringify(firefox));
+            if (!read('firefox').browser_specific_settings?.gecko?.id) throw new Error('firefox build has no add-on id');
+            if (read('chrome').browser_specific_settings) throw new Error('chrome build carries gecko settings');
+          "
 
       # The panel is loaded by URL rather than declared in the manifest, so a
       # build-config slip copies its HTML through untransformed, still pointing
       # at main.tsx. It then renders as a blank white frame with no build error.
       - name: Verify every built page loads a compiled bundle
         run: |
-          for page in dist/src/*/index.html; do
+          for page in dist/*/src/*/index.html; do
             grep -q 'src="/assets/.*\.js"' "$page" \
               || { echo "::error::$page has no compiled script tag"; exit 1; }
             ! grep -qE '\.tsx?"' "$page" \
@@ -51,8 +74,10 @@ jobs:
       # use.
       - name: Verify only the FoPost API is reachable
         run: |
-          HOSTS=$(node -p "JSON.parse(require('fs').readFileSync('dist/manifest.json','utf8')).host_permissions.join(' ')")
-          [ "$HOSTS" = "https://api.fopost.com/*" ] \
-            || { echo "::error::unexpected host permissions: $HOSTS"; exit 1; }
-          ! grep -rq "localhost:8080" dist/assets/*.js \
-            || { echo "::error::a dev API URL is baked into the shipped bundle"; exit 1; }
+          for target in chrome firefox; do
+            HOSTS=$(node -p "JSON.parse(require('fs').readFileSync('dist/$target/manifest.json','utf8')).host_permissions.join(' ')")
+            [ "$HOSTS" = "https://api.fopost.com/*" ] \
+              || { echo "::error::unexpected host permissions in $target: $HOSTS"; exit 1; }
+            ! grep -rq "localhost:8080" dist/$target/assets/*.js \
+              || { echo "::error::a dev API URL is baked into the shipped $target bundle"; exit 1; }
+          done

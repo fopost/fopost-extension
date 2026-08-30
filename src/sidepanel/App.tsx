@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ScanText, X } from 'lucide-react';
+import type { Storage } from 'webextension-polyfill';
 import ComposeView from './ComposeView.js';
 import QueueView from './QueueView.js';
 import SettingsView from './SettingsView.js';
@@ -12,6 +13,7 @@ import {
   readPendingCapture,
   setPendingCapture,
 } from '../lib/capture.js';
+import browser from '../lib/browser.js';
 import { getSettings } from '../lib/storage.js';
 import type { PageCapture } from '../lib/types.js';
 
@@ -45,7 +47,7 @@ export default function App() {
   // A capture can arrive while the overlay is already open, so it has to land
   // in a panel that mounted before the click.
   useEffect(() => {
-    const onChanged = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
+    const onChanged = (changes: Record<string, Storage.StorageChange>, area: string) => {
       if (area !== 'session' || !changes.pendingCapture?.newValue) return;
       void readPendingCapture().then((found) => {
         if (!found) return;
@@ -53,8 +55,8 @@ export default function App() {
         setScreen('compose');
       });
     };
-    chrome.storage.onChanged.addListener(onChanged);
-    return () => chrome.storage.onChanged.removeListener(onChanged);
+    browser.storage.onChanged.addListener(onChanged);
+    return () => browser.storage.onChanged.removeListener(onChanged);
   }, []);
 
   // Without a key nothing in the panel can load, so the guide takes over until
@@ -62,11 +64,11 @@ export default function App() {
   useEffect(() => {
     const read = () => void getSettings().then((s) => setHasKey(Boolean(s.apiKey)));
     read();
-    const onChanged = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
+    const onChanged = (changes: Record<string, Storage.StorageChange>, area: string) => {
       if (area === 'local' && changes.apiKey) read();
     };
-    chrome.storage.onChanged.addListener(onChanged);
-    return () => chrome.storage.onChanged.removeListener(onChanged);
+    browser.storage.onChanged.addListener(onChanged);
+    return () => browser.storage.onChanged.removeListener(onChanged);
   }, []);
 
   const discard = useCallback(() => {
@@ -81,7 +83,7 @@ export default function App() {
     setCapturing(true);
     setCaptureError(null);
     try {
-      const [active] = await chrome.tabs.query({ active: true, currentWindow: true });
+      const [active] = await browser.tabs.query({ active: true, currentWindow: true });
       if (!active?.id) throw new Error('No active tab.');
       const capture = await captureTab(active.id, 'page', null, null);
       await setPendingCapture(capture, active.id);
@@ -99,7 +101,7 @@ export default function App() {
           The standalone options page renders unframed and skips both. */}
       {framed && (
         <header className="flex shrink-0 items-center gap-2 border-b border-slate-200 px-4 py-2.5">
-          <img src={chrome.runtime.getURL('icon-32.png')} alt="" className="size-4" />
+          <img src={browser.runtime.getURL('icon-32.png')} alt="" className="size-4" />
           <span className="text-xs font-semibold tracking-tight">FoPost Publisher</span>
           <Button
             variant="ghost"

@@ -1,6 +1,9 @@
 # FoPost Publisher (browser extension)
 
-Two jobs in one MV3 extension:
+One MV3 codebase, two store builds: **Chrome** (which also covers Edge, Brave, Opera, Vivaldi, and
+Arc unchanged) and **Firefox**. See [Browser targets](#browser-targets).
+
+Two jobs in one extension:
 
 1. **Capture.** Right-click any page, image, link, or selection and send it to a composer that is
    already filled in: caption seeded from the page, the image imported into your media library,
@@ -50,9 +53,9 @@ Two consequences of living in the page, both by design:
 
 - **It closes when you navigate.** A content script does not survive a page load. Finish a draft
   before clicking a link.
-- **A few sites will refuse it.** A page whose Content Security Policy forbids framing a
-  `chrome-extension://` URL cannot host the panel, and pages that block extensions outright
-  (browser settings, the Web Store) never could. Both cases show a notification instead.
+- **A few sites will refuse it.** A page whose Content Security Policy forbids framing an
+  extension URL cannot host the panel, and pages that block extensions outright (browser
+  settings, the Web Store, `about:` pages) never could. Both cases show a notification instead.
 
 ## Setup
 
@@ -105,16 +108,51 @@ Deliberately **not** requested:
 
 Privacy policy: <https://fopost.com/privacy-policy>
 
+## Browser targets
+
+There is one codebase and one version number. `EXT_TARGET` picks the engine at build time and
+everything lands in `dist/<target>/`.
+
+| Target    | Covers                                   | Build                   |
+| :-------- | :--------------------------------------- | :---------------------- |
+| `chrome`  | Chrome, Edge, Brave, Opera, Vivaldi, Arc | `npm run build:chrome`  |
+| `firefox` | Firefox, Firefox for Android             | `npm run build:firefox` |
+
+Every Chromium browser installs the Chrome build unchanged, so "Chrome" here means Chromium, and
+only the store listings differ. Firefox needs a real build because three things differ, and all
+three live in `src/manifest.config.ts` so no other file has to know which browser it was built
+for:
+
+1. **Background.** Chrome MV3 wants an event-driven `service_worker`; Firefox MV3 has no extension
+   service worker and wants `scripts` (an event page). CI pins both shapes, because the wrong one
+   installs cleanly and then does nothing at all.
+2. **`browser_specific_settings`.** AMO requires a stable add-on ID.
+3. **Host permissions.** Chrome grants them at install. Firefox treats them as optional and the
+   user grants them, so `lib/permissions.ts` asks for the API origin when the key is saved — the
+   one user gesture the prompt can hang off. Without the grant every API call is blocked, which
+   looks from the panel exactly like a rejected key.
+
+Nothing else forks. `src/lib/browser.ts` is the single API surface: Firefox exposes `chrome.*`
+only in its callback form, so the promise-based `browser.*` namespace goes through
+`webextension-polyfill` on both engines and nothing in `src/` touches the `chrome` global.
+
 ## Develop
 
 ```bash
 npm install
-npm run dev       # Vite dev server + HMR
-npm run build     # type-check + production build to dist/
-npm run zip       # zip dist/ for the Chrome Web Store
+npm run dev              # Vite dev server + HMR, Chrome target
+npm run dev:firefox      # same, Firefox target
+npm run build            # type-check + production build of both targets
+npm run build:chrome     # one target only
+npm run build:firefox
+npm run lint:firefox     # web-ext lint — the checks AMO runs at submission
+npm run start:firefox    # launch Firefox with the build loaded
+npm run zip              # one store zip per target
 ```
 
-Load `dist/` via `chrome://extensions` → Developer mode → Load unpacked.
+Load `dist/chrome/` via `chrome://extensions` → Developer mode → Load unpacked. For Firefox, either
+`npm run start:firefox`, or `about:debugging` → This Firefox → Load Temporary Add-on →
+`dist/firefox/manifest.json`.
 
 A `npm run dev` build talks to `http://localhost:8080`; a production build talks to
 `https://api.fopost.com`, and only that build carries the matching host permission. Set
@@ -123,13 +161,17 @@ A `npm run dev` build talks to `http://localhost:8080`; a production build talks
 ## Release
 
 Bump `version` in `package.json` (`src/manifest.config.ts` reads its own copy, so bump both), tag
-the commit `v<version>`, and push the tag. CI verifies the tag, the manifest version, and the host
-permissions, then builds the store zip and attaches it to the GitHub release. Uploading to the
-Chrome Web Store stays manual, because each submission needs listing review.
+the commit `v<version>`, and push the tag. CI verifies the tag, both manifest versions, both
+background shapes, and the host permissions, then builds one store zip per target and attaches
+both to the GitHub release.
 
-## Chrome Web Store submission
+Uploading stays manual, and the two stores are independent: the Chrome Web Store and AMO each
+review their own listing, on their own clock, so one can be live while the other is queued. Ship
+the same version number to both.
 
-Ready in the repo:
+## Store submission
+
+Ready in the repo, and shared by both stores:
 
 - **Icons** — `public/icon-{16,32,48,128}.png`, wired into `icons` and `action.default_icon`.
 - **Permissions justification** — the table above.
@@ -147,5 +189,14 @@ Still to produce by hand before submitting (they require a running browser):
   5. The Queue tab with a Substack item due.
 - **Store listing copy and a 440×280 promo tile.**
 
+AMO additionally wants:
+
+- **The add-on ID to stay put.** It is the `gecko.id` GUID in `src/manifest.config.ts`. Changing it
+  orphans every existing install into a separate add-on, so never regenerate it.
+- **A clean `npm run lint:firefox`.** Errors are a rejection; the remaining `UNSAFE_VAR_ASSIGNMENT`
+  warnings come from React's own `innerHTML` use in the vendor chunk and are expected.
+- **Source code**, since the submission is minified. Point the reviewer at this repository and the
+  `npm ci && npm run build:firefox` command that reproduces the zip.
+
 Verify before each submission: `host_permissions` still names only the production API, and the
-manifest version matches `package.json`.
+manifest version matches `package.json`. CI checks both for both targets.

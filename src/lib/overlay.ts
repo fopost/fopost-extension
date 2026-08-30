@@ -1,6 +1,6 @@
 /**
- * The panel renders as a fixed iframe inside the page rather than in Chrome's
- * side panel, because the side panel is browser chrome: it reserves space and
+ * The panel renders as a fixed iframe inside the page rather than in the browser's
+ * own side panel, because the side panel is browser chrome: it reserves space and
  * reflows the tab. An in-page overlay floats above the site instead, so the
  * page keeps its full width.
  *
@@ -9,13 +9,15 @@
  * any site the user browses.
  */
 
+import browser, { executeInTab } from './browser.js';
+
 const OVERLAY_ID = 'fopost-overlay-root';
 const DEFAULT_WIDTH = 400;
 const MIN_WIDTH = 320;
 const MAX_WIDTH = 640;
 
 /**
- * Runs inside the page. Chrome serialises it to a string, so it must stay
+ * Runs inside the page. The browser serialises it to a string, so it must stay
  * self-contained and take everything it needs as arguments.
  */
 function mountOverlay(
@@ -113,18 +115,14 @@ function mountOverlay(
  */
 export async function openOverlay(tabId: number, toggle: boolean): Promise<boolean> {
   try {
-    await chrome.scripting.executeScript({
-      target: { tabId },
-      func: mountOverlay,
-      args: [
-        chrome.runtime.getURL('src/sidepanel/index.html'),
-        OVERLAY_ID,
-        DEFAULT_WIDTH,
-        MIN_WIDTH,
-        MAX_WIDTH,
-        toggle,
-      ],
-    });
+    await executeInTab(tabId, mountOverlay, [
+      browser.runtime.getURL('src/sidepanel/index.html'),
+      OVERLAY_ID,
+      DEFAULT_WIDTH,
+      MIN_WIDTH,
+      MAX_WIDTH,
+      toggle,
+    ]);
     return true;
   } catch {
     // Pages that block extensions entirely (browser settings, the Web Store)

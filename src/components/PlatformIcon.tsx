@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import browser from '../lib/browser.js';
 import { cn } from '../lib/utils.js';
 
 /**
@@ -14,7 +15,7 @@ const FILE_OVERRIDES: Record<string, string> = {
 
 function iconPath(platform: string): string {
   const file = FILE_OVERRIDES[platform] ?? `${platform}.svg`;
-  return chrome.runtime.getURL(`images/platforms/${file}`);
+  return browser.runtime.getURL(`images/platforms/${file}`);
 }
 
 export default function PlatformIcon({

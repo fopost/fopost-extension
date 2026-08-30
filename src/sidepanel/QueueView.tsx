@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Copy, ExternalLink, Image as ImageIcon, Inbox, RefreshCw } from 'lucide-react';
 import { ApiError, fetchQueue, markStatus } from '../lib/api.js';
+import browser from '../lib/browser.js';
 import PlatformIcon from '../components/PlatformIcon.js';
 import { Button } from '../components/ui/button.js';
 import { cn } from '../lib/utils.js';
@@ -84,7 +85,7 @@ export default function QueueView({ onCountChange }: { onCountChange?: (n: numbe
 
   const openSite = (platform: string) => {
     const url = publishUrl(platform);
-    if (url) void chrome.tabs.create({ url });
+    if (url) void browser.tabs.create({ url });
   };
 
   const updateStatus = async (item: ExtensionItem, status: 'published' | 'skipped') => {
@@ -119,7 +120,7 @@ export default function QueueView({ onCountChange }: { onCountChange?: (n: numbe
           <p className="text-xs leading-relaxed text-slate-500">
             That API key was rejected. Check it in Settings, or issue a new one in FoPost.
           </p>
-          <Button onClick={() => chrome.runtime.openOptionsPage()}>Open settings</Button>
+          <Button onClick={() => browser.runtime.openOptionsPage()}>Open settings</Button>
         </div>
       )}
 
