@@ -72,8 +72,8 @@ the store listing is written against exactly this shape.
 **Requests.** `authFetch` reads the key from `browser.storage.local`, sends
 `X-API-Key: <key>` to `${API_BASE_URL}/api/v1${path}`, and throws `ApiError(status, message, code)`
 parsed out of `{ error, message }`. Media upload is multipart and deliberately sets no
-`Content-Type` so the browser writes the boundary. Image bytes are fetched *inside the page that
-already displayed them*, which is why media import needs no permission on the image's CDN.
+`Content-Type` so the browser writes the boundary. Image bytes are fetched _inside the page that
+already displayed them_, which is why media import needs no permission on the image's CDN.
 
 **Anything injected into a page is serialised to a string** (`extractPage`, `mountOverlay`) and
 must stay self-contained — no imports, no module-scope references, everything through arguments.
