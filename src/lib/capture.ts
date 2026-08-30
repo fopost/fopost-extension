@@ -1,9 +1,10 @@
+import browser, { executeInTab } from './browser.js';
 import type { PageCapture } from './types.js';
 
 const PENDING_KEY = 'pendingCapture';
 
 /**
- * Runs inside the page, injected on demand. Must stay self-contained — Chrome
+ * Runs inside the page, injected on demand. Must stay self-contained — the browser
  * serialises it to a string, so it cannot reference anything from this module.
  */
 function extractPage(
@@ -116,24 +117,14 @@ export async function captureTab(
   clickedImageUrl: string | null,
   linkUrl: string | null,
 ): Promise<PageCapture> {
-  const [result] = await chrome.scripting.executeScript({
-    target: { tabId },
-    func: extractPage,
-    args: [source, clickedImageUrl, linkUrl],
-  });
-  return result.result as PageCapture;
+  return executeInTab(tabId, extractPage, [source, clickedImageUrl, linkUrl]);
 }
 
 export async function fetchImageFromTab(
   tabId: number,
   url: string,
 ): Promise<{ dataUrl: string; type: string; name: string } | { error: string }> {
-  const [result] = await chrome.scripting.executeScript({
-    target: { tabId },
-    func: fetchImageAsDataUrl,
-    args: [url, MAX_CAPTURE_IMAGE_BYTES],
-  });
-  return result.result as { dataUrl: string; type: string; name: string } | { error: string };
+  return executeInTab(tabId, fetchImageAsDataUrl, [url, MAX_CAPTURE_IMAGE_BYTES]);
 }
 
 // ─── Pending capture handoff (background → popup) ─────────────────
@@ -142,7 +133,7 @@ export async function fetchImageFromTab(
 // survive a browser restart.
 
 export async function setPendingCapture(capture: PageCapture, tabId: number): Promise<void> {
-  await chrome.storage.session.set({ [PENDING_KEY]: { capture, tabId } });
+  await browser.storage.session.set({ [PENDING_KEY]: { capture, tabId } });
 }
 
 /** Non-destructive: the capture survives an accidentally dismissed popup. */
@@ -150,12 +141,12 @@ export async function readPendingCapture(): Promise<{
   capture: PageCapture;
   tabId: number;
 } | null> {
-  const stored = await chrome.storage.session.get(PENDING_KEY);
+  const stored = await browser.storage.session.get(PENDING_KEY);
   return (stored[PENDING_KEY] as { capture: PageCapture; tabId: number } | undefined) ?? null;
 }
 
 export async function clearPendingCapture(): Promise<void> {
-  await chrome.storage.session.remove(PENDING_KEY);
+  await browser.storage.session.remove(PENDING_KEY);
 }
 
 export function dataUrlToBlob(dataUrl: string): Blob {

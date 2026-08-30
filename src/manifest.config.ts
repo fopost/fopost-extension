@@ -1,11 +1,22 @@
 import { defineManifest } from '@crxjs/vite-plugin';
+import { EXT_TARGET } from '../build-target.js';
 
 /**
- * Minimal MV3 manifest. Note what is deliberately absent: no host permission
- * for any site the user browses. Page capture runs through `activeTab` +
- * `scripting`, which only grant access to the one tab the user just acted on,
- * and only for that click. The only standing host permissions are the
- * FoPost API itself (plus localhost for development).
+ * One manifest, two engines. Only three things differ, and they are all here so
+ * no other file has to know which browser it was built for:
+ *
+ * - Background. Chrome MV3 wants an event-driven `service_worker`; Firefox MV3
+ *   has no service worker for extensions and wants `scripts` (an event page).
+ * - `browser_specific_settings`, which AMO requires for a stable add-on ID.
+ * - Host permissions. Chrome grants them at install; Firefox treats them as
+ *   optional and the user grants them, which is why the panel asks (see
+ *   `lib/permissions.ts`).
+ *
+ * Note what is deliberately absent from both: a host permission for any site
+ * the user browses. Page capture runs through `activeTab` + `scripting`, which
+ * only grant access to the one tab the user just acted on, and only for that
+ * click. The only standing host permissions are the FoPost API itself (plus
+ * localhost for development).
  */
 export default defineManifest((env) => ({
   manifest_version: 3,
@@ -31,10 +42,18 @@ export default defineManifest((env) => ({
     },
   },
   options_page: 'src/options/index.html',
-  background: {
-    service_worker: 'src/background.ts',
-    type: 'module',
-  },
+  background:
+    EXT_TARGET === 'firefox'
+      ? { scripts: ['src/background.ts'], type: 'module' }
+      : { service_worker: 'src/background.ts', type: 'module' },
+  // 126 is the floor for everything the extension uses: MV3 (109), ES modules
+  // in a background script (106), storage.session (115), and the Chrome-shaped
+  // `options_page` key (126). `web-ext lint` is what catches a wrong floor.
+  ...(EXT_TARGET === 'firefox' && {
+    browser_specific_settings: {
+      gecko: { id: '{4f8b9c2a-1d7e-4a63-9f05-6c3ab2e14d80}', strict_min_version: '126.0' },
+    },
+  }),
   permissions: [
     'storage',
     'alarms',

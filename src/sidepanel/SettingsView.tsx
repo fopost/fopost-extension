@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Check, ExternalLink, KeyRound } from 'lucide-react';
 import { Button } from '../components/ui/button.js';
 import { Field, Input } from '../components/ui/field.js';
+import { requestApiPermission } from '../lib/permissions.js';
 import { getSettings, saveSettings } from '../lib/storage.js';
 import { API_KEYS_URL } from '../lib/urls.js';
 
@@ -21,12 +22,20 @@ const SCOPES = [
 export default function SettingsView() {
   const [apiKey, setApiKey] = useState('');
   const [saved, setSaved] = useState(false);
+  const [denied, setDenied] = useState(false);
 
   useEffect(() => {
     void getSettings().then((s) => setApiKey(s.apiKey));
   }, []);
 
+  // Saving is the one user gesture the Firefox host-permission prompt can hang
+  // off. On Chrome this resolves true without prompting.
   const save = async () => {
+    setDenied(false);
+    if (!(await requestApiPermission())) {
+      setDenied(true);
+      return;
+    }
     await saveSettings({ apiKey });
     setSaved(true);
     window.setTimeout(() => setSaved(false), 2000);
@@ -67,6 +76,13 @@ export default function SettingsView() {
           </span>
         )}
       </div>
+
+      {denied && (
+        <p className="text-xs leading-relaxed text-red-600">
+          FoPost needs permission to reach its own API before it can save a key. Press Save again
+          and choose Allow.
+        </p>
+      )}
 
       <div className="space-y-2 border-t border-slate-100 pt-4">
         <p className="text-xs font-medium text-slate-700">Permissions the key needs</p>
