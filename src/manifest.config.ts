@@ -1,5 +1,6 @@
 import { defineManifest } from '@crxjs/vite-plugin';
 import { EXT_TARGET } from '../build-target.js';
+import pkg from '../package.json' with { type: 'json' };
 
 /**
  * One manifest, two engines. Only three things differ, and they are all here so
@@ -21,7 +22,8 @@ import { EXT_TARGET } from '../build-target.js';
 export default defineManifest((env) => ({
   manifest_version: 3,
   name: 'FoPost Publisher',
-  version: '0.2.0',
+  // Single source of truth: release.yml fails if these ever disagree.
+  version: pkg.version,
   description:
     'Capture any page, image, or link and turn it into a scheduled social post. Also queues content for platforms you publish by hand.',
   icons: {
