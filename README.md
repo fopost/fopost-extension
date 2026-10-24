@@ -9,7 +9,7 @@ Two jobs in one extension:
    already filled in: caption seeded from the page, the image imported into your media library,
    per-platform character counts, and Post now / Schedule.
 2. **Manual delivery.** For platforms with no usable write API (Substack today), it holds the
-   content FoPost scheduled and lets you copy and publish it yourself.
+   content [FoPost](https://fopost.com) scheduled and lets you copy and publish it yourself.
 
 ## How capture works
 
